@@ -1,15 +1,15 @@
 package com.datadoghq.sketch.benchmark;
 
+import com.datadoghq.sketch.ddsketch.DDSketch;
+import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.CollapsingMinDenseStore;
 import com.datadoghq.sketch.ddsketch.store.DenseStore;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import com.datadoghq.sketch.gk.GKArray;
+import com.datadoghq.sketch.util.dataset.Dataset;
 import com.datadoghq.sketch.util.dataset.FileDataset;
 import com.datadoghq.sketch.util.dataset.SyntheticDataset;
-import com.datadoghq.sketch.ddsketch.DDSketch;
-import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
-import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
-import com.datadoghq.sketch.util.dataset.Dataset;
 import com.github.stanfordfuturedata.momentsketch.SimpleMomentSketch;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
@@ -19,7 +19,9 @@ import org.apache.commons.math3.distribution.ParetoDistribution;
 
 final class BenchmarkData {
 
-    // The variable contribution to the memory size estimate (e.g., the size of variable-length arrays that hold the data) has to be accurately estimated. The memory overhead depends on the JVM and might be inaccurate but that's less important.
+    // The variable contribution to the memory size estimate (e.g., the size of variable-length arrays that hold the
+    // data) has to be accurately estimated. The memory overhead depends on the JVM and might be inaccurate but
+    // that's less important.
 
     static final Map<String, Supplier<QuantileSketch<?>>> SKETCHES = Map.of(
 

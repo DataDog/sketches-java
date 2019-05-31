@@ -19,7 +19,7 @@ public class DDSketch {
     private final IndexMapping indexMapping;
     private final double minIndexedValue;
     private final double maxIndexableValue;
-    private Store store;
+    private final Store store;
     private long zeroCount;
 
     public DDSketch(IndexMapping indexMapping, Supplier<Store> storeSupplier) {

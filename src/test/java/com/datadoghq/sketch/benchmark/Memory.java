@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class Memory {
 
     private final double numIterations = 10;
-    private final int maxNumValues = 100_000;
+    private final int maxNumValues = 100_000_000;
 
     @Test
     void test() {
@@ -22,7 +22,9 @@ class Memory {
 
         BenchmarkData.DATASETS.forEach((datasetId, dataset) -> {
 
-            IntStream.iterate(1, n -> n <= maxNumValues, n -> n * 10).forEach(numValues -> {
+            final int maxSize = dataset.getMaxSize();
+
+            IntStream.iterate(1, n -> n <= maxNumValues && n <= maxSize, n -> n * 10).forEach(numValues -> {
 
                 System.out.println(String.format(
                         "Dataset: %s, numValues: %d",
@@ -59,7 +61,7 @@ class Memory {
         System.out.println();
         System.out.println("Number of iterations: " + numIterations);
         System.out.println();
-        System.out.println("sketch,dataset,num_values,quantile,min,med,max,avg");
+        System.out.println("sketch,dataset,num_values,num_iterations,min,med,max,avg");
         results.forEach(
                 (testCase, list) -> {
 
@@ -67,14 +69,14 @@ class Memory {
                     final long avg = (long) list.stream().mapToLong(q -> q).average().getAsDouble();
 
                     System.out.println(String.format(
-                            "%s,%d,%d,%d,%d",
+                            "%s,%d,%d,%d,%d,%d",
                             testCase,
+                            sortedMemorySizes.length,
                             sortedMemorySizes[0],
                             sortedMemorySizes[sortedMemorySizes.length / 2],
                             sortedMemorySizes[sortedMemorySizes.length - 1],
                             avg
                     ));
-
                 }
         );
     }

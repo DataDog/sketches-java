@@ -13,17 +13,17 @@ import org.junit.jupiter.api.Test;
 
 abstract class Accuracy {
 
-    private final long numIterations = 10;
-    private final double quantiles[] = { 0.1, 0.5, 0.95, 0.99 };
+    private final long maxNumIterations = 100;
+    private final double[] quantiles = { 0.1, 0.5, 0.95, 0.99 };
     private final int maxNumValues = 100_000_000;
+    private final long maxNumAddedValues = 1_000_000_000;
 
     abstract AccuracyTester getAccuracyTester(double[] values);
 
     @Test
     void benchmark() {
 
-        System.out.println("Number of iterations: " + numIterations);
-        System.out.println("dataset,num_values,sketch,quantile,min,med,max,avg");
+        System.out.println("dataset,num_values,sketch,quantile,num_iterations,min,med,max,avg");
 
         BenchmarkData.DATASETS.forEach((datasetId, dataset) -> {
 
@@ -32,6 +32,8 @@ abstract class Accuracy {
             IntStream.iterate(1, n -> n <= maxNumValues && n <= maxSize, n -> n * 10).forEach(numValues -> {
 
                 final Map<String, List<Double>> results = new LinkedHashMap<>();
+
+                final long numIterations = Math.min(maxNumIterations, maxNumAddedValues / numValues);
 
                 for (int iteration = 0; iteration < numIterations; iteration++) {
 
@@ -70,10 +72,11 @@ abstract class Accuracy {
                             final double avg = list.stream().mapToDouble(q -> q).average().getAsDouble();
 
                             System.out.println(String.format(
-                                    "%s,%d,%s,%e,%e,%e,%e",
+                                    "%s,%d,%s,%d,%e,%e,%e,%e",
                                     datasetId,
                                     numValues,
                                     testCase,
+                                    sortedAccuracies.length,
                                     sortedAccuracies[0],
                                     sortedAccuracies[sortedAccuracies.length / 2],
                                     sortedAccuracies[sortedAccuracies.length - 1],

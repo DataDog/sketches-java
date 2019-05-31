@@ -11,11 +11,15 @@ public class SyntheticDataset implements Dataset {
         this.doubleSupplier = Objects.requireNonNull(doubleSupplier);
     }
 
+    public double get() {
+        return doubleSupplier.getAsDouble();
+    }
+
     @Override
     public double[] get(int size) {
         final double[] values = new double[size];
         for (int i = 0; i < size; i++) {
-            values[i] = doubleSupplier.getAsDouble();
+            values[i] = get();
         }
         return values;
     }
