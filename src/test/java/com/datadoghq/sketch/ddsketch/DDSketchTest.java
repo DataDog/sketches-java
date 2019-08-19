@@ -1,62 +1,95 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import com.datadoghq.sketch.util.QuantileSketchTest;
-import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
-import com.datadoghq.sketch.util.accuracy.RelativeAccuracyTester;
+import com.datadoghq.sketch.QuantileSketchTest;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
-import java.util.NoSuchElementException;
-import java.util.concurrent.ThreadLocalRandom;
+import com.datadoghq.sketch.ddsketch.store.Store;
+import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
+import java.util.function.Supplier;
+import org.junit.jupiter.api.Test;
 
-class DDSketchTest extends QuantileSketchTest<DDSketch> {
+abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
 
-    private final IndexMapping mapping = new LogarithmicMapping(1e-2);
+    abstract double relativeAccuracy();
+
+    IndexMapping mapping() {
+        return new LogarithmicMapping(relativeAccuracy());
+    }
+
+    Supplier<Store> storeSupplier() {
+        return UnboundedSizeDenseStore::new;
+    }
+
 
     @Override
     public DDSketch newSketch() {
-        return new DDSketch(mapping, UnboundedSizeDenseStore::new);
+        return new DDSketch(mapping(), storeSupplier());
     }
 
     @Override
-    public void addToSketch(DDSketch sketch, double value) {
-        sketch.add(value);
-    }
+    protected void assertAccurate(boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
 
-    @Override
-    public void merge(DDSketch sketch, DDSketch other) {
-        sketch.mergeWith(other);
-    }
+        if (sortedValues[0] < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (actualQuantileValue < 0) {
+            fail();
+        }
 
-    private void assertAccurate(DDSketch sketch, double[] values) {
+        final double lowerQuantileValue = sortedValues[(int) Math.floor(quantile * (sortedValues.length - 1))];
+        final double upperQuantileValue = sortedValues[(int) Math.ceil(quantile * (sortedValues.length - 1))];
 
-        assertEquals(values.length, sketch.getTotalCount());
+        final double minExpected = lowerQuantileValue * (1 - relativeAccuracy());
+        final double maxExpected = upperQuantileValue * (1 + relativeAccuracy());
 
-        if (values.length == 0) {
-            assertThrows(NoSuchElementException.class, sketch::getMin);
-            assertThrows(NoSuchElementException.class, sketch::getMax);
-            assertThrows(NoSuchElementException.class, () -> sketch.getValueAtQuantile(0));
-            assertThrows(NoSuchElementException.class, () -> sketch.getValueAtQuantile(1));
-        } else {
-            final RelativeAccuracyTester relativeAccuracyTester = new RelativeAccuracyTester(values);
-            relativeAccuracyTester.assertAccurate(mapping.relativeAccuracy(), sketch::getValueAtQuantile);
+        if (actualQuantileValue < minExpected || actualQuantileValue > maxExpected) {
+            fail();
         }
     }
 
+    @Test
     @Override
-    public void assertAddingAccurate(DDSketch sketch, double[] values) {
-        assertAccurate(sketch, values);
+    protected void throwsExceptionWhenExpected() {
+
+        super.throwsExceptionWhenExpected();
+
+        final DDSketch sketch = newSketch();
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> sketch.accept(-1)
+        );
     }
 
-    @Override
-    public void assertMergingAccurate(DDSketch sketch, double[] values) {
-        assertAccurate(sketch, values);
+    static class DDSketchTest1 extends DDSketchTest {
+
+        @Override
+        double relativeAccuracy() {
+            return 1e-1;
+        }
     }
 
-    @Override
-    public double randomValue() {
-        return ThreadLocalRandom.current().nextDouble(mapping.minIndexableValue(), 1e8);
+    static class DDSketchTest2 extends DDSketchTest {
+
+        @Override
+        double relativeAccuracy() {
+            return 1e-2;
+        }
+    }
+
+    static class DDSketchTest3 extends DDSketchTest {
+
+        @Override
+        double relativeAccuracy() {
+            return 1e-3;
+        }
     }
 }

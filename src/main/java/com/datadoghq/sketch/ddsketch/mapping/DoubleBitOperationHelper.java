@@ -1,3 +1,8 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.mapping;
 
 class DoubleBitOperationHelper {
@@ -11,8 +16,7 @@ class DoubleBitOperationHelper {
 
     private static final long ONE = 0x3ff0000000000000L;
 
-    private DoubleBitOperationHelper() {
-    }
+    private DoubleBitOperationHelper() {}
 
     static long getExponent(long longBits) {
         return ((longBits & EXPONENT_MASK) >> EXPONENT_SHIFT) - EXPONENT_BIAS;
@@ -28,8 +32,8 @@ class DoubleBitOperationHelper {
      */
     static double buildDouble(long exponent, double significandPlusOne) {
         return Double.longBitsToDouble(
-                (((exponent + EXPONENT_BIAS) << EXPONENT_SHIFT) & EXPONENT_MASK) |
-                        (Double.doubleToRawLongBits(significandPlusOne) & SIGNIFICAND_MASK)
+            (((exponent + EXPONENT_BIAS) << EXPONENT_SHIFT) & EXPONENT_MASK) |
+                (Double.doubleToRawLongBits(significandPlusOne) & SIGNIFICAND_MASK)
         );
     }
 }

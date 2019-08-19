@@ -1,36 +1,41 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.store;
 
-public class CollapsingMinDenseStore extends CollapsingDenseStore {
+public class CollapsingLowestDenseStore extends CollapsingDenseStore {
 
-    public CollapsingMinDenseStore(int maxNumBuckets) {
-        super(maxNumBuckets);
+    public CollapsingLowestDenseStore(int maxNumBins) {
+        super(maxNumBins);
     }
 
-    private CollapsingMinDenseStore(CollapsingMinDenseStore store) {
+    private CollapsingLowestDenseStore(CollapsingLowestDenseStore store) {
         super(store);
     }
 
     @Override
-    int normalizeIndex(int index) {
+    int normalize(int index) {
 
         if (index < minIndex) {
             if (isCollapsed) {
-                return minIndex;
+                return 0;
             } else {
                 extendRange(index);
                 if (isCollapsed) {
-                    return minIndex;
+                    return 0;
                 }
             }
         } else if (index > maxIndex) {
             extendRange(index);
         }
 
-        return index;
+        return index - offset;
     }
 
     @Override
-    void normalizeCounts(int newMinIndex, int newMaxIndex) {
+    void adjust(int newMinIndex, int newMaxIndex) {
 
         if (newMaxIndex - newMinIndex + 1 > counts.length) {
 
@@ -56,17 +61,17 @@ public class CollapsingMinDenseStore extends CollapsingDenseStore {
 
                     // Collapse the buckets.
                     final long collapsedCount = getTotalCount(minIndex, newMinIndex - 1);
-                    resetCountsBetweenIndices(minIndex, newMinIndex - 1);
+                    resetCounts(minIndex, newMinIndex - 1);
                     counts[newMinIndex - offset] += collapsedCount;
                     minIndex = newMinIndex;
 
                     // Shift the buckets to make room for newMaxIndex.
-                    shiftCountsInArray(shift);
+                    shiftCounts(shift);
 
                 } else {
 
                     // Shift the buckets to make room for newMinIndex.
-                    shiftCountsInArray(shift);
+                    shiftCounts(shift);
                     minIndex = newMinIndex;
                 }
             }
@@ -84,36 +89,31 @@ public class CollapsingMinDenseStore extends CollapsingDenseStore {
 
     @Override
     public Store copy() {
-        return new CollapsingMinDenseStore(this);
+        return new CollapsingLowestDenseStore(this);
     }
 
     @Override
     public void mergeWith(Store store) {
-        if (store instanceof CollapsingMinDenseStore) {
-            mergeWithDenseStore((CollapsingMinDenseStore) store);
+        if (store instanceof CollapsingLowestDenseStore) {
+            mergeWith((CollapsingLowestDenseStore) store);
         } else {
-            addAll(getDescendingBinIterator());
+            getDescendingStream().forEachOrdered(this::add);
         }
     }
 
-    private void mergeWithDenseStore(CollapsingMinDenseStore store) {
+    private void mergeWith(CollapsingLowestDenseStore store) {
 
         if (store.isEmpty()) {
             return;
         }
 
-        if (isEmpty()) {
-            copyFromOther(store);
-            return;
-        }
-
         if (store.minIndex < minIndex || store.maxIndex > maxIndex) {
-            extendRange(Math.min(minIndex, store.minIndex), Math.max(maxIndex, store.maxIndex));
+            extendRange(store.minIndex, store.maxIndex);
         }
 
         int index = store.minIndex;
-        for (; index < minIndex; index++) {
-            counts[minIndex - offset] += store.counts[index - store.offset];
+        for (; index < minIndex && index <= store.maxIndex; index++) {
+            counts[0] += store.counts[index - store.offset];
         }
         for (; index <= store.maxIndex; index++) {
             counts[index - offset] += store.counts[index - store.offset];

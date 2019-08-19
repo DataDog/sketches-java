@@ -1,61 +1,74 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.gk;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import com.datadoghq.sketch.util.QuantileSketchTest;
-import com.datadoghq.sketch.util.accuracy.RankAccuracyTester;
-import java.util.NoSuchElementException;
+import com.datadoghq.sketch.QuantileSketchTest;
+import java.util.Arrays;
 
-public class GKArrayTest extends QuantileSketchTest<GKArray> {
+abstract class GKArrayTest extends QuantileSketchTest<GKArray> {
+
+    abstract double rankAccuracy();
 
     @Override
     public GKArray newSketch() {
-        return new GKArray(1e-2);
+        return new GKArray(rankAccuracy());
     }
 
     @Override
-    public void addToSketch(GKArray sketch, double value) {
-        sketch.add(value);
-    }
+    protected void assertAccurate(boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
 
-    @Override
-    public void merge(GKArray sketch, GKArray other) {
-        sketch.mergeWith(other);
-    }
+        final double rankAccuracy = (merged ? 2 : 1) * rankAccuracy();
 
-    private void assertAccurate(GKArray sketch, double[] values, double maxRankError) {
+        // Check the rank accuracy.
 
-        assertEquals(values.length, sketch.getTotalCount());
+        final int minExpectedRank = (int) Math.floor(Math.max(quantile - rankAccuracy, 0) * sortedValues.length);
+        final int maxExpectedRank = (int) Math.ceil(Math.min(quantile + rankAccuracy, 1) * sortedValues.length);
 
-        if (sketch.isEmpty()) {
+        int searchIndex = Arrays.binarySearch(sortedValues, actualQuantileValue);
+        if (searchIndex < 0) {
+            searchIndex = -searchIndex - 1;
+        }
+        int index = searchIndex;
+        while (index > 0 && sortedValues[index - 1] >= actualQuantileValue) {
+            index--;
+        }
+        int minRank = index;
+        while (index < sortedValues.length && sortedValues[index] <= actualQuantileValue) {
+            index++;
+        }
+        int maxRank = index;
 
-            assertThrows(NoSuchElementException.class, sketch::getMinValue);
-            assertThrows(NoSuchElementException.class, sketch::getMaxValue);
-            assertThrows(NoSuchElementException.class, () -> sketch.getValueAtQuantile(0));
-            assertThrows(NoSuchElementException.class, () -> sketch.getValueAtQuantile(1));
-
-        } else {
-
-            final RankAccuracyTester accuracyTester = new RankAccuracyTester(values);
-
-            accuracyTester.assertMinExact(sketch.getMinValue());
-            accuracyTester.assertMaxExact(sketch.getMaxValue());
-            accuracyTester.assertMinExact(sketch::getValueAtQuantile);
-            accuracyTester.assertMaxExact(sketch::getValueAtQuantile);
-
-            accuracyTester.assertAccurate(maxRankError, sketch::getValueAtQuantile);
-
+        if (maxRank < minExpectedRank || minRank > maxExpectedRank) {
+            fail();
         }
     }
 
-    @Override
-    public void assertAddingAccurate(GKArray sketch, double[] values) {
-        assertAccurate(sketch, values, sketch.getRankAccuracy());
+    static class GKArrayTest1 extends GKArrayTest {
+
+        @Override
+        double rankAccuracy() {
+            return 1e-1;
+        }
     }
 
-    @Override
-    public void assertMergingAccurate(GKArray sketch, double[] values) {
-        assertAccurate(sketch, values, 2 * sketch.getRankAccuracy());
+    static class GKArrayTest2 extends GKArrayTest {
+
+        @Override
+        double rankAccuracy() {
+            return 1e-2;
+        }
+    }
+
+    static class GKArrayTest3 extends GKArrayTest {
+
+        @Override
+        double rankAccuracy() {
+            return 1e-3;
+        }
     }
 }

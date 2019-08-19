@@ -1,9 +1,20 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.mapping;
 
 import java.util.Objects;
 
 /**
- * Computation-optimized
+ * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link LogarithmicMapping}) by
+ * extracting the floor value of the logarithm to the base 2 from the binary representations of floating-point values
+ * and linearly interpolating the logarithm in-between using, again, the binary representation.
+ * <p>
+ * Note that this mapping, while fast, might be highly memory inefficient as it only works for a discrete set of
+ * relative accuracies and will fall back to the largest possible one that is less than the requested accuracy (which
+ * can be as low as half of it, in the worst case).
  */
 public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
 
@@ -16,7 +27,7 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
         this(getMinNumSignificantBinaryDigits(relativeAccuracy));
     }
 
-    public BitwiseLinearlyInterpolatedMapping(int numSignificantBinaryDigits) {
+    private BitwiseLinearlyInterpolatedMapping(int numSignificantBinaryDigits) {
         if (numSignificantBinaryDigits < 0) {
             throw new IllegalArgumentException("The number of significant binary digits cannot be negative.");
         }
@@ -27,7 +38,8 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     }
 
     /**
-     * @return the minimum number of significant binary digits that are required for the relative accuracy to be guaranteed
+     * @return the minimum number of significant binary digits that are required for the relative accuracy to be
+     * guaranteed
      */
     private static int getMinNumSignificantBinaryDigits(double relativeAccuracy) {
         if (relativeAccuracy <= 0 || relativeAccuracy >= 1) {
@@ -39,7 +51,8 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     @Override
     public int index(double value) {
         final long longBits = Double.doubleToRawLongBits(value);
-        return (int) ((DoubleBitOperationHelper.getExponent(longBits) << numSignificantBinaryDigits) | getPartialSignificand(longBits)); //TODO perf
+        return (int) ((DoubleBitOperationHelper.getExponent(longBits) << numSignificantBinaryDigits)
+            | getPartialSignificand(longBits));
     }
 
     private long getPartialSignificand(long longBits) {
@@ -50,8 +63,8 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     public double value(int index) {
         final int exponent = Math.floorDiv(index, multiplier);
         return DoubleBitOperationHelper.buildDouble(
-                exponent,
-                1 - exponent + (double) index / multiplier
+            exponent,
+            1 - exponent + (double) index / multiplier
         ) * (1 + relativeAccuracy);
     }
 
@@ -63,16 +76,16 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     @Override
     public double minIndexableValue() {
         return Math.max(
-                Math.pow(2, Integer.MIN_VALUE / multiplier + 1), // so that index >= Integer.MIN_VALUE
-                Double.MIN_NORMAL * (1 + relativeAccuracy) / (1 - relativeAccuracy)
+            Math.pow(2, Integer.MIN_VALUE / multiplier + 1), // so that index >= Integer.MIN_VALUE
+            Double.MIN_NORMAL * (1 + relativeAccuracy) / (1 - relativeAccuracy)
         );
     }
 
     @Override
     public double maxIndexableValue() {
         return Math.min(
-                Math.pow(2, Integer.MAX_VALUE / multiplier), // so that index <= Integer.MAX_VALUE
-                Double.MAX_VALUE / (1 + relativeAccuracy)
+            Math.pow(2, Integer.MAX_VALUE / multiplier), // so that index <= Integer.MAX_VALUE
+            Double.MAX_VALUE / (1 + relativeAccuracy)
         );
     }
 

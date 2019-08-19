@@ -1,3 +1,8 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.util.accuracy;
 
 public class RelativeAccuracyTester extends AccuracyTester {
@@ -10,7 +15,7 @@ public class RelativeAccuracyTester extends AccuracyTester {
     public double test(double value, double quantile) {
 
         final double lowerQuantileValue = valueAt((int) Math.floor(quantile * (numValues() - 1)));
-        final double upperQuantileValue = valueAt((int) Math.ceil(quantile * (numValues()- 1)));
+        final double upperQuantileValue = valueAt((int) Math.ceil(quantile * (numValues() - 1)));
 
         return compute(lowerQuantileValue, upperQuantileValue, value);
     }

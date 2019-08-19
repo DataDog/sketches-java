@@ -1,3 +1,8 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.util.accuracy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,16 +49,16 @@ public abstract class AccuracyTester {
     public double testAllQuantiles(DoubleUnaryOperator quantileSketch, double quantileIncrement) {
 
         return DoubleStream.concat(
-                DoubleStream.iterate(
-                        0,
-                        quantile -> quantile <= 1,
-                        quantile -> quantile + quantileIncrement
-                ),
-                DoubleStream.of(1)
+            DoubleStream.iterate(
+                0,
+                quantile -> quantile <= 1,
+                quantile -> quantile + quantileIncrement
+            ),
+            DoubleStream.of(1) // explicitly test 1 no matter what the increment is
         )
-                .map(quantile -> test(quantileSketch, quantile))
-                .max()
-                .orElseThrow();
+            .map(quantile -> test(quantileSketch, quantile))
+            .max()
+            .orElseThrow();
     }
 
     public void assertAccurate(double maxExpected, DoubleUnaryOperator quantileSketch) {
@@ -65,10 +70,6 @@ public abstract class AccuracyTester {
     }
 
     public static void assertAccurate(double maxExpected, double actual) {
-        if (!(actual <= maxExpected + FLOATING_POINT_ACCEPTABLE_ERROR)) {
-            System.out.println(actual);
-            System.out.println(maxExpected);
-        }
         assertTrue(actual <= maxExpected + FLOATING_POINT_ACCEPTABLE_ERROR);
     }
 

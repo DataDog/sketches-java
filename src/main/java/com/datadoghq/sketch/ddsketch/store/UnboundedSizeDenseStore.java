@@ -1,3 +1,8 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.store;
 
 public class UnboundedSizeDenseStore extends DenseStore {
@@ -19,42 +24,37 @@ public class UnboundedSizeDenseStore extends DenseStore {
     }
 
     @Override
-    int normalizeIndex(int index) {
+    int normalize(int index) {
 
         if (index < minIndex || index > maxIndex) {
             extendRange(index);
         }
 
-        return index;
+        return index - offset;
     }
 
     @Override
-    void normalizeCounts(int newMinIndex, int newMaxIndex) {
+    void adjust(int newMinIndex, int newMaxIndex) {
         centerCounts(newMinIndex, newMaxIndex);
     }
 
     @Override
     public void mergeWith(Store store) {
         if (store instanceof UnboundedSizeDenseStore) {
-            mergeWithDenseStore((UnboundedSizeDenseStore) store);
+            mergeWith((UnboundedSizeDenseStore) store);
         } else {
             super.mergeWith(store);
         }
     }
 
-    private void mergeWithDenseStore(UnboundedSizeDenseStore store) {
+    private void mergeWith(UnboundedSizeDenseStore store) {
 
         if (store.isEmpty()) {
             return;
         }
 
-        if (isEmpty()) {
-            copyFromOther(store);
-            return;
-        }
-
         if (store.minIndex < minIndex || store.maxIndex > maxIndex) {
-            extendRange(Math.min(minIndex, store.minIndex), Math.max(maxIndex, store.maxIndex));
+            extendRange(store.minIndex, store.maxIndex);
         }
 
         for (int index = store.minIndex; index <= store.maxIndex; index++) {

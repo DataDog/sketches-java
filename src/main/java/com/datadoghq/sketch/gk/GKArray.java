@@ -1,27 +1,25 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.gk;
 
+import com.datadoghq.sketch.QuantileSketch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class GKArray {
-
-    static class Entry {
-
-        double v;
-        long g;
-        long delta;
-
-        Entry(double v, long g, long delta) {
-            this.v = v;
-            this.g = g;
-            this.delta = delta;
-        }
-    }
+/**
+ * An implementation of the <a href="http://infolab.stanford.edu/~datar/courses/cs361a/papers/quantiles.pdf">quantile
+ * sketch of Greenwald and Khanna</a>.
+ */
+public class GKArray implements QuantileSketch<GKArray> {
 
     private final double rankAccuracy;
+
     private ArrayList<Entry> entries;
     private final double[] incoming;
     private int incomingIndex;
@@ -34,10 +32,10 @@ public class GKArray {
         this.incoming = new double[(int) (1 / rankAccuracy) + 1];
         this.incomingIndex = 0;
         this.minValue = Double.MAX_VALUE;
-        this.compressedCount = 0L;
+        this.compressedCount = 0;
     }
 
-    public GKArray(GKArray sketch) {
+    private GKArray(GKArray sketch) {
         this.rankAccuracy = sketch.rankAccuracy;
         this.entries = new ArrayList<>(sketch.entries);
         this.incoming = Arrays.copyOf(sketch.incoming, sketch.incoming.length);
@@ -50,44 +48,31 @@ public class GKArray {
         return rankAccuracy;
     }
 
-    public boolean isEmpty() {
-        return entries.isEmpty() && incomingIndex == 0;
-    }
-
-    public long getTotalCount() {
-        if (incomingIndex > 0) {
-            compress();
-        }
-        return compressedCount;
-    }
-
-    public double getMinValue() {
-        if (isEmpty()) {
-            throw new NoSuchElementException();
-        }
-        compressIfNecessary();
-        return minValue;
-    }
-
-    public double getMaxValue() {
-        if (isEmpty()) {
-            throw new NoSuchElementException();
-        }
-        compressIfNecessary();
-        return entries.get(entries.size() - 1).v;
-    }
-
-    public void add(double value) {
+    @Override
+    public void accept(double value) {
         incoming[incomingIndex++] = value;
         if (incomingIndex == incoming.length) {
             compress();
         }
     }
 
+    @Override
+    public void accept(double value, long count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("The count cannot be negative.");
+        }
+        for (long i = 0; i < count; i++) {
+            accept(value);
+        }
+    }
+
+    @Override
     public void mergeWith(GKArray other) {
 
         if (rankAccuracy != other.rankAccuracy) {
-            throw new IllegalArgumentException("The sketches don't have the same accuracy parameter.");
+            throw new IllegalArgumentException(
+                "The sketches are not mergeable because they do not use the same accuracy parameter."
+            );
         }
 
         if (other.isEmpty()) {
@@ -118,25 +103,62 @@ public class GKArray {
 
         for (int i = 0; i < other.entries.size() - 1; i++) {
             incomingEntries.add(new Entry(
-                    other.entries.get(i).v,
-                    other.entries.get(i + 1).g + other.entries.get(i + 1).delta - other.entries.get(i).delta,
-                    0
+                other.entries.get(i).v,
+                other.entries.get(i + 1).g + other.entries.get(i + 1).delta - other.entries.get(i).delta,
+                0
             ));
         }
 
         incomingEntries.add(new Entry(
-                other.entries.get(other.entries.size() - 1).v,
-                spread + 1,
-                0
+            other.entries.get(other.entries.size() - 1).v,
+            spread + 1,
+            0
         ));
 
         compress(incomingEntries, other.compressedCount);
     }
 
+    @Override
+    public GKArray copy() {
+        return new GKArray(this);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return entries.isEmpty() && incomingIndex == 0;
+    }
+
+    @Override
+    public long getCount() {
+        if (incomingIndex > 0) {
+            compress();
+        }
+        return compressedCount;
+    }
+
+    @Override
+    public double getMinValue() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        compressIfNecessary();
+        return minValue;
+    }
+
+    @Override
+    public double getMaxValue() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        compressIfNecessary();
+        return entries.get(entries.size() - 1).v;
+    }
+
+    @Override
     public double getValueAtQuantile(double quantile) {
 
         if (quantile < 0 || quantile > 1) {
-            throw new IllegalArgumentException("Invalid quantile.");
+            throw new IllegalArgumentException("The quantile must be between 0 and 1.");
         }
 
         if (isEmpty()) {
@@ -166,14 +188,19 @@ public class GKArray {
         }
     }
 
+    @Override
+    public double[] getValuesAtQuantiles(double[] quantiles) {
+        return Arrays.stream(quantiles).map(this::getValueAtQuantile).toArray();
+    }
+
     private void compressIfNecessary() {
         if (incomingIndex > 0) {
             compress();
         }
     }
 
-    public void compress() {
-        compress(new ArrayList<>(), 0L);
+    private void compress() {
+        compress(new ArrayList<>(), 0);
     }
 
     private void compress(List<Entry> additionalEntries, long additionalCount) {
@@ -197,7 +224,7 @@ public class GKArray {
             if (i == additionalEntries.size()) {
 
                 if (j + 1 < entries.size() &&
-                        entries.get(j).g + entries.get(j + 1).g + entries.get(j + 1).delta <= removalThreshold) {
+                    entries.get(j).g + entries.get(j + 1).g + entries.get(j + 1).delta <= removalThreshold) {
                     // Removable from sketch.
                     entries.get(j + 1).g += entries.get(j).g;
                 } else {
@@ -210,8 +237,8 @@ public class GKArray {
 
                 // Done with sketch; now only considering incoming.
                 if (i + 1 < additionalEntries.size() &&
-                        additionalEntries.get(i).g + additionalEntries.get(i + 1).g + additionalEntries.get(i + 1).delta
-                                <= removalThreshold) {
+                    additionalEntries.get(i).g + additionalEntries.get(i + 1).g + additionalEntries.get(i + 1).delta
+                        <= removalThreshold) {
                     // Removable from incoming.
                     additionalEntries.get(i + 1).g += additionalEntries.get(i).g;
                 } else {
@@ -225,7 +252,8 @@ public class GKArray {
                 if (additionalEntries.get(i).g + entries.get(j).g + entries.get(j).delta <= removalThreshold) {
                     entries.get(j).g += additionalEntries.get(i).g;
                 } else {
-                    additionalEntries.get(i).delta = entries.get(j).g + entries.get(j).delta - additionalEntries.get(i).g;
+                    additionalEntries.get(i).delta =
+                        entries.get(j).g + entries.get(j).delta - additionalEntries.get(i).g;
                     mergedEntries.add(additionalEntries.get(i));
                 }
 
@@ -234,7 +262,7 @@ public class GKArray {
             } else {
 
                 if (j + 1 < entries.size() &&
-                        entries.get(j).g + entries.get(j + 1).g + entries.get(j + 1).delta <= removalThreshold) {
+                    entries.get(j).g + entries.get(j + 1).g + entries.get(j + 1).delta <= removalThreshold) {
                     // Removable from sketch.
                     entries.get(j + 1).g += entries.get(j).g;
                 } else {
@@ -250,7 +278,16 @@ public class GKArray {
         incomingIndex = 0;
     }
 
-    public int getNumEntries() {
-        return entries.size();
+    private static class Entry {
+
+        private final double v;
+        private long g;
+        private long delta;
+
+        private Entry(double v, long g, long delta) {
+            this.v = v;
+            this.g = g;
+            this.delta = delta;
+        }
     }
 }

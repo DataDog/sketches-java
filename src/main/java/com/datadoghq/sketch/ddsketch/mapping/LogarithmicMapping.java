@@ -1,9 +1,16 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.mapping;
 
 import java.util.Objects;
 
 /**
- * Memory-optimal.
+ * An {@link IndexMapping} that is <i>memory-optimal</i>, that is to say that given a targeted relative accuracy, it
+ * requires the least number of indices to cover a given range of values. This is done by logarithmically mapping
+ * floating-point values to integers.
  */
 public class LogarithmicMapping implements IndexMapping {
 
@@ -21,7 +28,7 @@ public class LogarithmicMapping implements IndexMapping {
     @Override
     public int index(double value) {
         final double index = Math.log(value) / logGamma;
-        return index >= 0 ? (int) index : (int) index - 1; // faster than Math.floor()
+        return index >= 0 ? (int) index : (int) index - 1;
     }
 
     @Override
@@ -37,16 +44,16 @@ public class LogarithmicMapping implements IndexMapping {
     @Override
     public double minIndexableValue() {
         return Math.max(
-                Math.exp((Integer.MIN_VALUE + 1) * logGamma), // so that index >= Integer.MIN_VALUE
-                Double.MIN_NORMAL * Math.exp(logGamma) // so that Math.exp(index * logGamma) >= Double.MIN_NORMAL
+            Math.exp((Integer.MIN_VALUE + 1) * logGamma), // so that index >= Integer.MIN_VALUE
+            Double.MIN_NORMAL * Math.exp(logGamma) // so that Math.exp(index * logGamma) >= Double.MIN_NORMAL
         );
     }
 
     @Override
     public double maxIndexableValue() {
         return Math.min(
-                Math.exp(Integer.MAX_VALUE * logGamma), // so that index <= Integer.MAX_VALUE
-                Double.MAX_VALUE / (1 + relativeAccuracy) // so that value >= Double.MAX_VALUE
+            Math.exp(Integer.MAX_VALUE * logGamma), // so that index <= Integer.MAX_VALUE
+            Double.MAX_VALUE / (1 + relativeAccuracy) // so that value >= Double.MAX_VALUE
         );
     }
 

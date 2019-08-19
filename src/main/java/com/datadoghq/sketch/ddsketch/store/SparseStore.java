@@ -1,3 +1,8 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.store;
 
 import java.util.Iterator;
@@ -19,8 +24,27 @@ public class SparseStore implements Store {
     }
 
     @Override
+    public void add(int index) {
+        bins.merge(index, 1L, Long::sum);
+    }
+
+    @Override
     public void add(int index, long count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("The count cannot be negative.");
+        }
+        if (count == 0) {
+            return;
+        }
         bins.merge(index, count, Long::sum);
+    }
+
+    @Override
+    public void add(Bin bin) {
+        if (bin.getCount() == 0) {
+            return;
+        }
+        bins.merge(bin.getIndex(), bin.getCount(), Long::sum);
     }
 
     @Override
@@ -39,12 +63,12 @@ public class SparseStore implements Store {
     }
 
     @Override
-    public Iterator<Bin> getAscendingBinIterator() {
+    public Iterator<Bin> getAscendingIterator() {
         return getBinIterator(bins);
     }
 
     @Override
-    public Iterator<Bin> getDescendingBinIterator() {
+    public Iterator<Bin> getDescendingIterator() {
         return getBinIterator(bins.descendingMap());
     }
 

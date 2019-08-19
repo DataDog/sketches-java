@@ -1,47 +1,136 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.store;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+/**
+ * An object that maps integers to counters. It can be seen as a collection of {@link Bin}, which are pairs of
+ * indices and counters.
+ */
 public interface Store {
 
-    int getMinIndex();
+    /**
+     * Increments the counter at the specified index.
+     *
+     * @param index the index of the counter to be incremented
+     */
+    default void add(int index) {
+        add(index, 1);
+    }
 
-    int getMaxIndex();
-
+    /**
+     * Updates the counter at the specified index.
+     *
+     * @param index the index of the counter to be updated
+     * @param count a non-negative integer value
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
     void add(int index, long count);
 
-    default void add(int index) {
-        add(index, 1L);
+    /**
+     * Updates the counter at the specified index.
+     *
+     * @param bin the bin to be used for updating the counter
+     */
+    default void add(Bin bin) {
+        add(bin.getIndex(), bin.getCount());
     }
 
+    /**
+     * Merges another store into this one. This should be equivalent as running the {@code add} operations that have
+     * been run on the other {@code store} on this one.
+     *
+     * @param store the store to be merged into this one
+     */
     default void mergeWith(Store store) {
-        addAll(store.getAscendingBinIterator());
+        store.getStream().forEach(this::add);
     }
 
-    default void addAll(Iterator<Bin> binIterator) {
-        while (binIterator.hasNext()) {
-            final Bin bin = binIterator.next();
-            add(bin.getIndex(), bin.getCount());
-        }
-    }
-
+    /**
+     * @return a (deep) copy of this store
+     */
     Store copy();
 
-    default long getTotalCount() {
-
-        final Iterator<Bin> binIterator = getAscendingBinIterator();
-        long count = 0L;
-        while (binIterator.hasNext()) {
-            count += binIterator.next().getCount();
-        }
-        return count;
-    }
-
+    /**
+     * @return {@code true} iff the {@code Store} does not contain any non-zero counter
+     */
     default boolean isEmpty() {
-        return getTotalCount() == 0;
+        return getStream()
+            .mapToLong(Bin::getCount)
+            .allMatch(count -> count == 0);
     }
 
-    Iterator<Bin> getAscendingBinIterator();
+    /**
+     * @return the sum of the counters of this store
+     */
+    default long getTotalCount() {
+        return getStream()
+            .mapToLong(Bin::getCount)
+            .sum();
+    }
 
-    Iterator<Bin> getDescendingBinIterator();
+    /**
+     * @return the index of the lowest non-zero counter
+     * @throws java.util.NoSuchElementException if the store is empty
+     */
+    default int getMinIndex() {
+        return getAscendingStream()
+            .filter(bin -> bin.getCount() > 0)
+            .findFirst()
+            .orElseThrow(NoSuchElementException::new)
+            .getIndex();
+    }
+
+    /**
+     * @return the index of the highest non-zero counter
+     * @throws java.util.NoSuchElementException if the store is empty
+     */
+    default int getMaxIndex() {
+        return getDescendingStream()
+            .filter(bin -> bin.getCount() > 0)
+            .findFirst()
+            .orElseThrow(NoSuchElementException::new)
+            .getIndex();
+    }
+
+    /**
+     * @return a stream with the bins of this store as its source
+     */
+    default Stream<Bin> getStream() {
+        return getAscendingStream();
+    }
+
+    /**
+     * @return an ordered stream (from lowest to highest index) with the bins of this store as its source
+     */
+    default Stream<Bin> getAscendingStream() {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(getAscendingIterator(), 0), false);
+    }
+
+    /**
+     * @return an ordered stream (from highest to lowest index) with the bins of this store as its source
+     */
+    default Stream<Bin> getDescendingStream() {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(getDescendingIterator(), 0), false);
+    }
+
+    /**
+     * @return an iterator that iterates over the bins of this store, from lowest to highest index
+     */
+    // Needed because of JDK-8194952
+    Iterator<Bin> getAscendingIterator();
+
+    /**
+     * @return an iterator that iterates over the bins of this store, from highest to lowest index
+     */
+    // Needed because of JDK-8194952
+    Iterator<Bin> getDescendingIterator();
 }

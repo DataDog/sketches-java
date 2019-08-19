@@ -1,7 +1,17 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2019 Datadog, Inc.
+ */
+
 package com.datadoghq.sketch.ddsketch.mapping;
 
 import java.util.Objects;
 
+/**
+ * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link LogarithmicMapping}) by
+ * extracting the floor value of the logarithm to the base 2 from the binary representations of floating-point values
+ * and quadratically interpolating the logarithm in-between.
+ */
 public class QuadraticallyInterpolatedMapping implements IndexMapping {
 
     private final double relativeAccuracy;
@@ -18,10 +28,12 @@ public class QuadraticallyInterpolatedMapping implements IndexMapping {
     @Override
     public int index(double value) {
         final long longBits = Double.doubleToRawLongBits(value);
-        final long exponent = DoubleBitOperationHelper.getExponent(longBits);
         final double significandPlusOne = DoubleBitOperationHelper.getSignificandPlusOne(longBits);
-        final double index = multiplier * ((double) exponent * 3 - (significandPlusOne - 5) * (significandPlusOne - 1));
-        return index >= 0 ? (int) index : (int) index - 1; // faster than Math.floor()
+        final double index = multiplier * (
+            (double) DoubleBitOperationHelper.getExponent(longBits) * 3
+                - (significandPlusOne - 5) * (significandPlusOne - 1)
+        );
+        return index >= 0 ? (int) index : (int) index - 1;
     }
 
     @Override
@@ -40,16 +52,16 @@ public class QuadraticallyInterpolatedMapping implements IndexMapping {
     @Override
     public double minIndexableValue() {
         return Math.max(
-                Math.pow(2, (Integer.MIN_VALUE + 1) / (3 * multiplier) + 1), // so that index >= Integer.MIN_VALUE
-                Double.MIN_NORMAL * (1 + relativeAccuracy) / (1 - relativeAccuracy)
+            Math.pow(2, (Integer.MIN_VALUE + 1) / (3 * multiplier) + 1), // so that index >= Integer.MIN_VALUE
+            Double.MIN_NORMAL * (1 + relativeAccuracy) / (1 - relativeAccuracy)
         );
     }
 
     @Override
     public double maxIndexableValue() {
         return Math.min(
-                Math.pow(2, Integer.MAX_VALUE / (3 * multiplier) - 1), // so that index <= Integer.MAX_VALUE
-                Double.MAX_VALUE / (1 + relativeAccuracy)
+            Math.pow(2, Integer.MAX_VALUE / (3 * multiplier) - 1), // so that index <= Integer.MAX_VALUE
+            Double.MAX_VALUE / (1 + relativeAccuracy)
         );
     }
 
