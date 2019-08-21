@@ -17,7 +17,7 @@ The memory size of the sketch depends on the range that is covered by the input 
 GKArray is a sketch with rank error guarantees. Refer to [2] for more details.
 
 ## References
-[1] Charles Masson, Jee Rim and Homin K. Lee. All the nines: a fully mergeable quantile sketch with relative-error guarantees for arbitrarily large quantiles. 2018.
+[1] Charles Masson, Jee Rim and Homin K. Lee. All the nines: a fully mergeable quantile sketch with relative-error guarantees for arbitrarily large quantiles. 2019.
 
 [2] Michael B. Greenwald and Sanjeev Khanna. Space-efficient online computation of quantile summaries. In Proc. 2001 ACM
 SIGMOD International Conference on Management of Data, SIGMOD ’01, pages 58–66. ACM, 2001.

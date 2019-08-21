@@ -1,4 +1,4 @@
-# Contributing to sketches-go 
+# Contributing to sketches-java
 
 First of all, thanks for contributing!
 
