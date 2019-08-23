@@ -1,0 +1,38 @@
+# Maven
+target
+/target
+**/dependency-reduced-pom.xml
+
+# Gradle
+!**/gradle/wrapper/*
+/.gradle
+*/.gradle
+**/build/
+examples/**/build/
+
+# Eclipse
+bin/
+*.launch
+.settings
+.project
+.classpath
+
+# IntelliJ IDEA
+/.idea
+*.iml
+*.ipr
+*.iws
+out/
+
+# Visual Studio Code
+.vscode
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
