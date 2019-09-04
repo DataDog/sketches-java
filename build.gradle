@@ -1,5 +1,7 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
 }
 
 repositories {
@@ -12,7 +14,84 @@ dependencies {
 }
 
 group = 'com.datadoghq'
-version = '0.1.0-SNAPSHOT'
+version = '0.1.0'
 
 sourceCompatibility = '12'
 targetCompatibility = '12'
+
+task sourcesJar(type: Jar) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom {
+
+                name = 'DDSketch'
+                description = 'A Fast and Fully-Mergeable Quantile Sketch with Relative-Error Guarantees.'
+                url = 'https://github.com/DataDog/sketches-java'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name = 'Charles Masson'
+                        organization = 'Datadog'
+                        email = 'charles.masson@datadoghq.com'
+                    }
+                    developer {
+                        name = 'Jee E. Rim'
+                        organization = 'Datadog'
+                        email = 'jee.rim@datadoghq.com'
+                    }
+                    developer {
+                        name = 'Homin K. Lee'
+                        organization = 'Datadog'
+                        email = 'homin@datadoghq.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/DataDog/sketches-java.git'
+                    developerConnection = 'scm:git:ssh://github.com:DataDog/sketches-java.git'
+                    url = 'http://github.com/DataDog/sketches-java'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+
+            def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+            def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+            url = version.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+            credentials {
+                username ossrhUsername
+                password ossrhPassword
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
