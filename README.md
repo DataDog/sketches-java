@@ -2,7 +2,33 @@
 
 This repo contains Java implementations of the distributed quantile sketch algorithms `DDSketch` [1] and `GKArray` [2]. Both sketches are mergeable, meaning that multiple sketches from distributed systems can be combined in a central node.
 
-## DDSketch
+# Quick start guide
+
+`sketches-java` is available in the Maven Central Repository. See [this page](https://search.maven.org/artifact/com.datadoghq/sketches-java) for easily adding it as a dependency to your project. You should then be able to import `com.datadoghq.sketch.ddsketch.DDSketch`.
+
+The following code snippet shows the most basic features of `DDSketch`:
+
+```java
+// Creating an initially empty sketch, with low memory footprint
+double relativeAccuracy = 0.01;
+DDSketch sketch = DDSketch.memoryOptimal(relativeAccuracy);
+
+// Adding values to the sketch
+sketch.accept(3.2); // adds a single value
+sketch.accept(2.1, 3); // adds multiple times the same value
+
+// Querying the sketch
+sketch.getValueAtQuantile(0.5); // returns the median value
+sketch.getMinValue();
+sketch.getMaxValue();
+
+// Merging another sketch into the sketch, in-place
+DDSketch anotherSketch = DDSketch.memoryOptimal(relativeAccuracy);
+DoubleStream.of(3.4, 7.6, 2.8).forEach(anotherSketch);
+sketch.mergeWith(anotherSketch);
+```
+
+# DDSketch
 
 DDSketch has relative error guarantees: it computes quantiles with a controlled relative error.
 
@@ -12,11 +38,11 @@ For instance, using `DDSketch` with a relative accuracy guarantee set to 1%, if 
 
 The memory size of the sketch depends on the range that is covered by the input values: the larger that range, the more bins are needed to keep track of the input values. As a rough estimate, if working on durations using standrad parameters (mapping and store) with a relative accuracy of 2%, about 2.2kB (297 bins) are needed to cover values between 1 millisecond and 1 minute, and about 6.8kB (867 bins) to cover values between 1 nanosecond and 1 day. The number of bins that are maintained can be upper-bounded using collapsing stores (see for example `DDSketch.standardCollapsingLowest` and `DDSketch.standardCollapsingHighest`).
 
-## GKArray
+# GKArray
 
 GKArray is a sketch with rank error guarantees. Refer to [2] for more details.
 
-## References
+# References
 [1] Charles Masson, Jee E. Rim and Homin K. Lee. DDSketch: A Fast and Fully-Mergeable Quantile Sketch with Relative-Error Guarantees. 2019.
 
 [2] Michael B. Greenwald and Sanjeev Khanna. Space-efficient online computation of quantile summaries. In Proc. 2001 ACM
