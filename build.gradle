@@ -16,8 +16,8 @@ dependencies {
 group = 'com.datadoghq'
 version = '0.1.1-SNAPSHOT'
 
-sourceCompatibility = '12'
-targetCompatibility = '12'
+sourceCompatibility = '11'
+targetCompatibility = '11'
 
 task sourcesJar(type: Jar) {
     archiveClassifier = 'sources'
