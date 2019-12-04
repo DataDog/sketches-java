@@ -285,4 +285,18 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
             testMerging(values);
         }
     }
+
+    @Test
+    void testCopyingEmpty() {
+        newSketch().copy();
+    }
+
+    @Test
+    void testCopyingNonEmpty() {
+        final double[] values = new double[]{ 0 };
+        final QS sketch = newSketch();
+        Arrays.stream(values).forEach(sketch);
+        final QS copy = sketch.copy();
+        assertEncodes(false, values, copy);
+    }
 }

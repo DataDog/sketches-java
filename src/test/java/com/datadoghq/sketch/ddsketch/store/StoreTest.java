@@ -193,4 +193,18 @@ abstract class StoreTest {
         testMerging(new int[]{ 2, 2 }, new int[]{ 2, 2, 2 }, new int[]{ 2 });
         testMerging(new int[]{ -8, -8 }, new int[]{}, new int[]{ -8 });
     }
+
+    @Test
+    void testCopyingEmpty() {
+        newStore().copy();
+    }
+
+    @Test
+    void testCopyingNonEmpty() {
+        final Bin[] bins = new Bin[]{ new Bin(0, 1) };
+        final Store store = newStore();
+        Arrays.stream(bins).forEach(store::add);
+        final Store copy = store.copy();
+        assertEncodes(bins, copy);
+    }
 }
