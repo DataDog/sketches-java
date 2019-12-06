@@ -47,7 +47,7 @@ public abstract class DenseStore implements Store {
     DenseStore(DenseStore store) {
         this.arrayLengthGrowthIncrement = store.arrayLengthGrowthIncrement;
         this.arrayLengthOverhead = store.arrayLengthOverhead;
-        this.counts = Arrays.copyOf(store.counts, store.counts.length);
+        this.counts = store.counts == null ? null : Arrays.copyOf(store.counts, store.counts.length);
         this.offset = store.offset;
         this.minIndex = store.minIndex;
         this.maxIndex = store.maxIndex;
