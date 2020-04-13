@@ -31,6 +31,12 @@ package com.datadoghq.sketch.ddsketch.mapping;
  * <td>100% (reference)</td>
  * </tr>
  * <tr>
+ * <td>{@link CubicallyInterpolatedMapping}</td>
+ * <td>~1% ({@code 7/(10*log(2))-1})</td>
+ * <td>~1% ({@code 7/(10*log(2))-1})</td>
+ * <td>~30%</td>
+ * </tr>
+ * <tr>
  * <td>{@link QuadraticallyInterpolatedMapping}</td>
  * <td>~8% ({@code 3/(4*log(2))-1})</td>
  * <td>~8% ({@code 3/(4*log(2))-1})</td>
