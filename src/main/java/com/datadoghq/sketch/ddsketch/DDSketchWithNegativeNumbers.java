@@ -231,22 +231,19 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
         Iterator<Bin> negativeBinIterator = negativeValueStore.getDescendingIterator();
         while (negativeBinIterator.hasNext()) {
             Bin bin = negativeBinIterator.next();
-            n += bin.getCount();
-            if (n > rank) {
+            if ((n += bin.getCount()) > rank) {
                 return -indexMapping.value(bin.getIndex());
             }
         }
 
-        n += zeroCount;
-        if (n > rank) {
+        if ((n += zeroCount) > rank) {
             return 0;
         }
 
         Iterator<Bin> positiveBinIterator = positiveValueStore.getAscendingIterator();
         while (positiveBinIterator.hasNext()) {
             Bin bin = positiveBinIterator.next();
-            n += bin.getCount();
-            if (n > rank) {
+            if ((n += bin.getCount()) > rank) {
                 return indexMapping.value(bin.getIndex());
             }
         }
