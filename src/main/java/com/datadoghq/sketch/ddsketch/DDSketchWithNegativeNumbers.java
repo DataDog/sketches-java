@@ -6,48 +6,17 @@
 package com.datadoghq.sketch.ddsketch;
 
 import com.datadoghq.sketch.QuantileSketch;
-import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
-import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
-import com.datadoghq.sketch.ddsketch.mapping.QuadraticallyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.store.Bin;
-import com.datadoghq.sketch.ddsketch.store.CollapsingHighestDenseStore;
-import com.datadoghq.sketch.ddsketch.store.CollapsingLowestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.Store;
-import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 /**
- * A {@link QuantileSketch} with relative-error guarantees. This sketch computes quantile values with an
- * approximation error that is relative to the actual quantile value. It works both on negative and positive input values.
- * <p>
- * For instance, using {@code DDSketch} with a relative accuracy guarantee set to 1%, if the expected quantile
- * value is 100, the computed quantile value is guaranteed to be between 99 and 101. If the expected quantile value
- * is 1000, the computed quantile value is guaranteed to be between 990 and 1010.
- * <p>
- * {@code DDSketch} works by mapping floating-point input values to bins and counting the number of values for each
- * bin. The mapping to bins is handled by {@link IndexMapping}, while the underlying structure that keeps track of
- * bin counts is {@link Store}. {@link #memoryOptimal} constructs a sketch with a logarithmic index mapping, hence low
- * memory footprint, whereas {@link #fast} and {@link #balanced} offer faster ingestion speeds at the cost of
- * larger memory footprints. The size of the sketch can be upper-bounded by using collapsing stores. For instance,
- * {@link #memoryOptimalCollapsingLowest} is the version of {@code DDSketch} described in the paper, and also
- * implemented in <a href="https://github.com/DataDog/sketches-go/">Go</a>
- * and <a href="https://github.com/DataDog/sketches-py/">Python</a>
- * . It collapses lowest bins when the maximum number of buckets is reached. For using a specific
- * {@link IndexMapping} or a specific implementation of {@link Store}, the constructor can be used
- * ({@link #DDSketch(IndexMapping, Supplier)}).
- * <p>
- * The memory size of the sketch depends on the range that is covered by the input values: the larger that range, the
- * more bins are needed to keep track of the input values. As a rough estimate, if working on durations using
- * {@link #memoryOptimal} with a relative accuracy of 2%, about 2kB (275 bins) are needed to cover values between 1
- * millisecond and 1 minute, and about 6kB (802 bins) to cover values between 1 nanosecond and 1 day. The number of
- * bins that are maintained can be upper-bounded using collapsing stores (see for example
- * {@link #memoryOptimalCollapsingLowest} and {@link #memoryOptimalCollapsingHighest}).
- * <p>
- * Note that this implementation is not thread-safe.
+ * A {@link QuantileSketch} with the same relative-error guarantees as {@link DDSketch}, but accepts
+ * both negative and positive input values.
  */
 public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithNegativeNumbers> {
 
@@ -55,28 +24,34 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
     private final double minIndexedValue;
     private final double maxIndexedValue;
 
-    private final Store negativeStore;
-    private final Store positiveStore;
+    private final Store negativeValueStore;
+    private final Store positiveValueStore;
     private long zeroCount;
 
     /**
-     * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and {@link Store}
-     * supplier.
+     * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and
+     * {@link Store} supplier.
      *
      * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
      * @param storeSupplier the store constructor for keeping track of added values
-     * @see #balanced
-     * @see #balancedCollapsingLowest
-     * @see #balancedCollapsingHighest
-     * @see #fast
-     * @see #fastCollapsingLowest
-     * @see #fastCollapsingHighest
-     * @see #memoryOptimal
-     * @see #memoryOptimalCollapsingLowest
-     * @see #memoryOptimalCollapsingHighest
      */
     public DDSketchWithNegativeNumbers(IndexMapping indexMapping, Supplier<Store> storeSupplier) {
-        this(indexMapping, storeSupplier, 0);
+        this(indexMapping, storeSupplier, storeSupplier, 0);
+    }
+
+    /**
+     * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and
+     * {@link Store} suppliers.
+     *
+     * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
+     * @param negativeValueStoreSupplier the store constructor for keeping track of added negative values
+     * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
+     */
+    public DDSketchWithNegativeNumbers(
+            IndexMapping indexMapping,
+            Supplier<Store> negativeValueStoreSupplier,
+            Supplier<Store> positiveValueStoreSupplier) {
+        this(indexMapping, negativeValueStoreSupplier, positiveValueStoreSupplier, 0);
     }
 
     /**
@@ -84,24 +59,20 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
      * supplier.
      *
      * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
-     * @param storeSupplier the store constructor for keeping track of added values
+     * @param negativeValueStoreSupplier the store constructor for keeping track of added negative values
+     * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      * @param minIndexedValue the least value that should be distinguished from zero
-     * @see #balanced
-     * @see #balancedCollapsingLowest
-     * @see #balancedCollapsingHighest
-     * @see #fast
-     * @see #fastCollapsingLowest
-     * @see #fastCollapsingHighest
-     * @see #memoryOptimal
-     * @see #memoryOptimalCollapsingLowest
-     * @see #memoryOptimalCollapsingHighest
      */
-    public DDSketchWithNegativeNumbers(IndexMapping indexMapping, Supplier<Store> storeSupplier, double minIndexedValue) {
+    public DDSketchWithNegativeNumbers(
+            IndexMapping indexMapping,
+            Supplier<Store> negativeValueStoreSupplier,
+            Supplier<Store> positiveValueStoreSupplier,
+            double minIndexedValue) {
         this.indexMapping = indexMapping;
         this.minIndexedValue = Math.max(minIndexedValue, indexMapping.minIndexableValue());
         this.maxIndexedValue = indexMapping.maxIndexableValue();
-        this.negativeStore = storeSupplier.get();
-        this.positiveStore = storeSupplier.get();
+        this.negativeValueStore = negativeValueStoreSupplier.get();
+        this.positiveValueStore = positiveValueStoreSupplier.get();
         this.zeroCount = 0;
     }
 
@@ -109,8 +80,8 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
         this.indexMapping = sketch.indexMapping;
         this.minIndexedValue = sketch.minIndexedValue;
         this.maxIndexedValue = sketch.maxIndexedValue;
-        this.negativeStore = sketch.negativeStore.copy();
-        this.positiveStore = sketch.positiveStore.copy();
+        this.negativeValueStore = sketch.negativeValueStore.copy();
+        this.positiveValueStore = sketch.positiveValueStore.copy();
         this.zeroCount = sketch.zeroCount;
     }
 
@@ -118,12 +89,12 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
         return indexMapping;
     }
 
-    public Store getNegativeStore() {
-        return negativeStore;
+    public Store getNegativeValueStore() {
+        return negativeValueStore;
     }
 
-    public Store getPositiveStore() {
-        return positiveStore;
+    public Store getPositiveValueStore() {
+        return positiveValueStore;
     }
 
     /**
@@ -137,9 +108,9 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
         checkValueTrackable(value);
 
         if (value > minIndexedValue) {
-            positiveStore.add(indexMapping.index(value));
+            positiveValueStore.add(indexMapping.index(value));
         } else if (value < -minIndexedValue) {
-            negativeStore.add(indexMapping.index(-value));
+            negativeValueStore.add(indexMapping.index(-value));
         } else {
             zeroCount++;
         }
@@ -160,9 +131,9 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
         }
 
         if (value > minIndexedValue) {
-            positiveStore.add(indexMapping.index(value), count);
+            positiveValueStore.add(indexMapping.index(value), count);
         } else if (value < -minIndexedValue) {
-            negativeStore.add(indexMapping.index(-value), count);
+            negativeValueStore.add(indexMapping.index(-value), count);
         } else {
             zeroCount += count;
         }
@@ -188,8 +159,8 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
             );
         }
 
-        negativeStore.mergeWith(other.negativeStore);
-        positiveStore.mergeWith(other.positiveStore);
+        negativeValueStore.mergeWith(other.negativeValueStore);
+        positiveValueStore.mergeWith(other.positiveValueStore);
         zeroCount += other.zeroCount;
     }
 
@@ -200,33 +171,33 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
 
     @Override
     public boolean isEmpty() {
-        return zeroCount == 0 && negativeStore.isEmpty() && positiveStore.isEmpty();
+        return zeroCount == 0 && negativeValueStore.isEmpty() && positiveValueStore.isEmpty();
     }
 
     @Override
     public long getCount() {
-        return zeroCount + negativeStore.getTotalCount() + positiveStore.getTotalCount();
+        return zeroCount + negativeValueStore.getTotalCount() + positiveValueStore.getTotalCount();
     }
 
     @Override
     public double getMinValue() {
-        if (!negativeStore.isEmpty()) {
-            return -indexMapping.value(negativeStore.getMaxIndex());
+        if (!negativeValueStore.isEmpty()) {
+            return -indexMapping.value(negativeValueStore.getMaxIndex());
         } else if (zeroCount > 0) {
             return 0;
         } else {
-            return indexMapping.value(positiveStore.getMinIndex());
+            return indexMapping.value(positiveValueStore.getMinIndex());
         }
     }
 
     @Override
     public double getMaxValue() {
-        if (!positiveStore.isEmpty()) {
-            return indexMapping.value(positiveStore.getMaxIndex());
+        if (!positiveValueStore.isEmpty()) {
+            return indexMapping.value(positiveValueStore.getMaxIndex());
         } else if (zeroCount > 0) {
             return 0;
         } else {
-            return -indexMapping.value(negativeStore.getMinIndex());
+            return -indexMapping.value(negativeValueStore.getMinIndex());
         }
     }
 
@@ -257,8 +228,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
 
         long n = 0;
 
-        Iterator<Bin> negativeBinIterator = negativeStore.getDescendingIterator();
-
+        Iterator<Bin> negativeBinIterator = negativeValueStore.getDescendingIterator();
         while (negativeBinIterator.hasNext()) {
             Bin bin = negativeBinIterator.next();
             n += bin.getCount();
@@ -266,11 +236,13 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
                 return -indexMapping.value(bin.getIndex());
             }
         }
+
         n += zeroCount;
         if (n > rank) {
             return 0;
         }
-        Iterator<Bin> positiveBinIterator = positiveStore.getAscendingIterator();
+
+        Iterator<Bin> positiveBinIterator = positiveValueStore.getAscendingIterator();
         while (positiveBinIterator.hasNext()) {
             Bin bin = positiveBinIterator.next();
             n += bin.getCount();
@@ -279,145 +251,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
             }
         }
 
-        throw new IllegalStateException(String.format("quantile=%f count=%d n=%d rank=%d", quantile, count, n, rank));
+        throw new NoSuchElementException();
     }
 
-    // Preset sketches
-
-    /**
-     * Constructs a balanced instance of {@code DDSketch}, with high ingestion speed and low memory footprint.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch
-     * @return a balanced instance of {@code DDSketch}
-     */
-    public static DDSketchWithNegativeNumbers balanced(double relativeAccuracy) {
-        return new DDSketchWithNegativeNumbers(
-                new QuadraticallyInterpolatedMapping(relativeAccuracy),
-                UnboundedSizeDenseStore::new
-        );
-    }
-
-    /**
-     * Constructs a balanced instance of {@code DDSketch}, with high ingestion speed and low memory footprint, using
-     * a limited number of bins. When the maximum number of bins is reached, bins with lowest indices are collapsed,
-     * which causes the relative accuracy guarantee to be lost on lowest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a balanced instance of {@code DDSketch} using a limited number of bins
-     */
-    public static DDSketchWithNegativeNumbers balancedCollapsingLowest(double relativeAccuracy, int maxNumBins) {
-        return new DDSketchWithNegativeNumbers(
-                new QuadraticallyInterpolatedMapping(relativeAccuracy),
-                () -> new CollapsingLowestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a balanced instance of {@code DDSketch}, with high ingestion speed and low memory footprint,, using
-     * a limited number of bins. When the maximum number of bins is reached, bins with highest indices are collapsed,
-     * which causes the relative accuracy guarantee to be lost on highest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a balanced instance of {@code DDSketch} using a limited number of bins
-     */
-    public static DDSketchWithNegativeNumbers balancedCollapsingHighest(double relativeAccuracy, int maxNumBins) {
-        return new DDSketchWithNegativeNumbers(
-                new QuadraticallyInterpolatedMapping(relativeAccuracy),
-                () -> new CollapsingHighestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a fast instance of {@code DDSketch}, with optimized ingestion speed, at the cost of higher memory
-     * usage.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch
-     * @return a fast instance of {@code DDSketch}
-     */
-    public static DDSketchWithNegativeNumbers fast(double relativeAccuracy) {
-        return new DDSketchWithNegativeNumbers(
-                new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
-                UnboundedSizeDenseStore::new
-        );
-    }
-
-    /**
-     * Constructs a fast instance of {@code DDSketch}, with optimized ingestion speed, at the cost of higher memory
-     * usage, using a limited number of bins. When the maximum number of bins is reached, bins with lowest indices
-     * are collapsed, which causes the relative accuracy guarantee to be lost on lowest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a fast instance of {@code DDSketch} using a limited number of bins
-     */
-    public static DDSketchWithNegativeNumbers fastCollapsingLowest(double relativeAccuracy, int maxNumBins) {
-        return new DDSketchWithNegativeNumbers(
-                new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
-                () -> new CollapsingLowestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a fast instance of {@code DDSketch}, with optimized ingestion speed, at the cost of higher memory
-     * usage, using a limited number of bins. When the maximum number of bins is reached, bins with highest indices
-     * are collapsed, which causes the relative accuracy guarantee to be lost on highest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a fast instance of {@code DDSketch} using a limited number of bins
-     */
-    public static DDSketchWithNegativeNumbers fastCollapsingHighest(double relativeAccuracy, int maxNumBins) {
-        return new DDSketchWithNegativeNumbers(
-                new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
-                () -> new CollapsingHighestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a memory-optimal instance of {@code DDSketch}, with optimized memory usage, at the cost of lower
-     * ingestion speed.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch
-     * @return a memory-optimal instance of {@code DDSketch}
-     */
-    public static DDSketchWithNegativeNumbers memoryOptimal(double relativeAccuracy) {
-        return new DDSketchWithNegativeNumbers(
-                new LogarithmicMapping(relativeAccuracy),
-                UnboundedSizeDenseStore::new
-        );
-    }
-
-    /**
-     * Constructs a memory-optimal instance of {@code DDSketch}, with optimized memory usage, at the cost of lower
-     * ingestion speed, using a limited number of bins. When the maximum number of bins is reached, bins with lowest
-     * indices are collapsed, which causes the relative accuracy guarantee to be lost on lowest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a memory-optimal instance of {@code DDSketch} using a limited number of bins
-     */
-    public static DDSketchWithNegativeNumbers memoryOptimalCollapsingLowest(double relativeAccuracy, int maxNumBins) {
-        return new DDSketchWithNegativeNumbers(
-                new LogarithmicMapping(relativeAccuracy),
-                () -> new CollapsingLowestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a memory-optimal instance of {@code DDSketch}, with optimized memory usage, at the cost of lower
-     * ingestion speed, using a limited number of bins. When the maximum number of bins is reached, bins with highest
-     * indices are collapsed, which causes the relative accuracy guarantee to be lost on highest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a memory-optimal instance of {@code DDSketch} using a limited number of bins
-     */
-    public static DDSketchWithNegativeNumbers memoryOptimalCollapsingHighest(double relativeAccuracy, int maxNumBins) {
-        return new DDSketchWithNegativeNumbers(
-                new LogarithmicMapping(relativeAccuracy),
-                () -> new CollapsingHighestDenseStore(maxNumBins)
-        );
-    }
 }
