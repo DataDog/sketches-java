@@ -17,7 +17,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
-abstract class DDSketchWithNegativeNumbersTest extends QuantileSketchTest<DDSketchWithNegativeNumbers> {
+abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
 
     abstract double relativeAccuracy();
 
@@ -31,8 +31,8 @@ abstract class DDSketchWithNegativeNumbersTest extends QuantileSketchTest<DDSket
 
 
     @Override
-    public DDSketchWithNegativeNumbers newSketch() {
-        return new DDSketchWithNegativeNumbers(mapping(), storeSupplier());
+    public SignedDDSketch newSketch() {
+        return new SignedDDSketch(mapping(), storeSupplier());
     }
 
     @Override
@@ -144,7 +144,7 @@ abstract class DDSketchWithNegativeNumbersTest extends QuantileSketchTest<DDSket
         ).toArray());
     }
 
-    static class DDSketchWithNegativeNumbersTest1 extends DDSketchWithNegativeNumbersTest {
+    static class SignedDDSketchTest1 extends SignedDDSketchTest {
 
         @Override
         double relativeAccuracy() {
@@ -152,7 +152,7 @@ abstract class DDSketchWithNegativeNumbersTest extends QuantileSketchTest<DDSket
         }
     }
 
-    static class DDSketchWithNegativeNumbersTest2 extends DDSketchWithNegativeNumbersTest {
+    static class SignedDDSketchTest2 extends SignedDDSketchTest {
 
         @Override
         double relativeAccuracy() {
@@ -160,7 +160,7 @@ abstract class DDSketchWithNegativeNumbersTest extends QuantileSketchTest<DDSket
         }
     }
 
-    static class DDSketchWithNegativeNumbersTest3 extends DDSketchWithNegativeNumbersTest {
+    static class SignedDDSketchTest3 extends SignedDDSketchTest {
 
         @Override
         double relativeAccuracy() {

@@ -18,7 +18,7 @@ import java.util.function.Supplier;
  * A {@link QuantileSketch} with the same relative-error guarantees as {@link DDSketch}, but accepts
  * both negative and positive input values.
  */
-public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithNegativeNumbers> {
+public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
 
     private final IndexMapping indexMapping;
     private final double minIndexedValue;
@@ -35,7 +35,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
      * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
      * @param storeSupplier the store constructor for keeping track of added values
      */
-    public DDSketchWithNegativeNumbers(IndexMapping indexMapping, Supplier<Store> storeSupplier) {
+    public SignedDDSketch(IndexMapping indexMapping, Supplier<Store> storeSupplier) {
         this(indexMapping, storeSupplier, storeSupplier, 0);
     }
 
@@ -47,7 +47,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
      * @param negativeValueStoreSupplier the store constructor for keeping track of added negative values
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      */
-    public DDSketchWithNegativeNumbers(
+    public SignedDDSketch(
             IndexMapping indexMapping,
             Supplier<Store> negativeValueStoreSupplier,
             Supplier<Store> positiveValueStoreSupplier) {
@@ -63,7 +63,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      * @param minIndexedValue the least value that should be distinguished from zero
      */
-    public DDSketchWithNegativeNumbers(
+    public SignedDDSketch(
             IndexMapping indexMapping,
             Supplier<Store> negativeValueStoreSupplier,
             Supplier<Store> positiveValueStoreSupplier,
@@ -76,7 +76,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
         this.zeroCount = 0;
     }
 
-    private DDSketchWithNegativeNumbers(DDSketchWithNegativeNumbers sketch) {
+    private SignedDDSketch(SignedDDSketch sketch) {
         this.indexMapping = sketch.indexMapping;
         this.minIndexedValue = sketch.minIndexedValue;
         this.maxIndexedValue = sketch.maxIndexedValue;
@@ -151,7 +151,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
      * @throws IllegalArgumentException if the other sketch does not use the same index mapping
      */
     @Override
-    public void mergeWith(DDSketchWithNegativeNumbers other) {
+    public void mergeWith(SignedDDSketch other) {
 
         if (!indexMapping.equals(other.indexMapping)) {
             throw new IllegalArgumentException(
@@ -165,8 +165,8 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
     }
 
     @Override
-    public DDSketchWithNegativeNumbers copy() {
-        return new DDSketchWithNegativeNumbers(this);
+    public SignedDDSketch copy() {
+        return new SignedDDSketch(this);
     }
 
     @Override
