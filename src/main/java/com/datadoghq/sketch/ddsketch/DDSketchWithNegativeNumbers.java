@@ -136,9 +136,9 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
 
         checkValueTrackable(value);
 
-        if (value > 0 && value > minIndexedValue) {
+        if (value > minIndexedValue) {
             positiveStore.add(indexMapping.index(value));
-        } else if (value < 0 && value < minIndexedValue) {
+        } else if (value < -minIndexedValue) {
             negativeStore.add(indexMapping.index(-value));
         } else {
             zeroCount++;
@@ -159,9 +159,9 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
             throw new IllegalArgumentException("The count cannot be negative.");
         }
 
-        if (value > 0 && value > minIndexedValue) {
+        if (value > minIndexedValue) {
             positiveStore.add(indexMapping.index(value), count);
-        } else if (value < 0 && value < minIndexedValue) {
+        } else if (value < -minIndexedValue) {
             negativeStore.add(indexMapping.index(-value), count);
         } else {
             zeroCount += count;
