@@ -212,7 +212,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
     public double getMinValue() {
         if (!negativeStore.isEmpty()) {
             return -indexMapping.value(negativeStore.getMaxIndex());
-        } else if (zeroCount > 0 || positiveStore.isEmpty()) {
+        } else if (zeroCount > 0) {
             return 0;
         } else {
             return indexMapping.value(positiveStore.getMinIndex());
@@ -223,7 +223,7 @@ public class DDSketchWithNegativeNumbers implements QuantileSketch<DDSketchWithN
     public double getMaxValue() {
         if (!positiveStore.isEmpty()) {
             return indexMapping.value(positiveStore.getMaxIndex());
-        } else if (zeroCount > 0 || negativeStore.isEmpty()) {
+        } else if (zeroCount > 0) {
             return 0;
         } else {
             return -indexMapping.value(negativeStore.getMinIndex());
