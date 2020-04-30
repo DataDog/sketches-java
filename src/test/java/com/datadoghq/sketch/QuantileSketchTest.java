@@ -111,7 +111,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
         }
     }
 
-    void testAdding(double... values) {
+    protected void testAdding(double... values) {
         {
             final QS sketch = newSketch();
             Arrays.stream(values).forEach(sketch);
@@ -126,7 +126,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
         }
     }
 
-    void testMerging(double[]... values) {
+    protected void testMerging(double[]... values) {
         {
             final QS sketch = newSketch();
             Arrays.stream(values).forEach(sketchValues -> {
