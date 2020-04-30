@@ -8,6 +8,8 @@ package com.datadoghq.sketch.ddsketch;
 import com.datadoghq.sketch.QuantileSketch;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.store.Bin;
+import com.datadoghq.sketch.ddsketch.store.CollapsingHighestDenseStore;
+import com.datadoghq.sketch.ddsketch.store.CollapsingLowestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -17,6 +19,9 @@ import java.util.function.Supplier;
 /**
  * A {@link QuantileSketch} with the same relative-error guarantees as {@link DDSketch}, but accepts
  * both negative and positive input values.
+ * <p>
+ * As the negative value store is reversed, to collapse the lowest values its supplier should
+ * provide a {@link CollapsingHighestDenseStore} rather than a {@link CollapsingLowestDenseStore}.
  */
 public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
 
