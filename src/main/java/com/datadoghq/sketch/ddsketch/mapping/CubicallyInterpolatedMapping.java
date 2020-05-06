@@ -9,6 +9,9 @@ import java.util.Objects;
  */
 public class CubicallyInterpolatedMapping implements IndexMapping {
 
+    // Assuming we write the index as index(v) = floor(multiplier*ln(2)/ln(gamma)*(e+As^3+Bs^2+Cs)), where v=2^e(1+s)
+    // and gamma = (1+relativeAccuracy)/(1-relativeAccuracy), those are the coefficients that minimize the multiplier,
+    // therefore the memory footprint of the sketch, while ensuring the relative accuracy of the sketch.
     private static final double A = 6.0 / 35.0;
     private static final double B = -3.0 / 5.0;
     private static final double C = 10.0 / 7.0;
