@@ -6,6 +6,7 @@
 package com.datadoghq.sketch.ddsketch.store;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -25,8 +26,8 @@ abstract class CollapsingLowestDenseStoreTest extends StoreTest {
             .filter(bin -> bin.getCount() > 0)
             .mapToInt(Bin::getIndex)
             .max();
-        if (maxIndex.isEmpty()) {
-            return Map.of();
+        if (!maxIndex.isPresent()) {
+            return Collections.emptyMap();
         }
         final int minStorableIndex = maxIndex.getAsInt() - maxNumBins() + 1;
         return Arrays.stream(bins)

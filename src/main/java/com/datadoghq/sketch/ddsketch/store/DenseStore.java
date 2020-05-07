@@ -8,6 +8,7 @@ package com.datadoghq.sketch.ddsketch.store;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -232,14 +233,15 @@ public abstract class DenseStore implements Store {
             return Stream.of();
         }
         return IntStream
-            .iterate(counts.length - 1, index -> index >= 0, index -> index - 1)
+            .iterate(counts.length - 1, index -> index - 1)
+            .limit(counts.length)
             .mapToObj(index -> new Bin(index + offset, counts[index]));
     }
 
     @Override
     public Iterator<Bin> getAscendingIterator() {
 
-        return new Iterator<>() {
+        return new Iterator<Bin>() {
 
             private int index = minIndex;
 
@@ -258,7 +260,7 @@ public abstract class DenseStore implements Store {
     @Override
     public Iterator<Bin> getDescendingIterator() {
 
-        return new Iterator<>() {
+        return new Iterator<Bin>() {
 
             private int index = maxIndex;
 
