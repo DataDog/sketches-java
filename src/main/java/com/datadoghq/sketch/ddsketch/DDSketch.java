@@ -7,9 +7,9 @@ package com.datadoghq.sketch.ddsketch;
 
 import com.datadoghq.sketch.QuantileSketch;
 import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.mapping.CubicallyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
-import com.datadoghq.sketch.ddsketch.mapping.QuadraticallyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.store.Bin;
 import com.datadoghq.sketch.ddsketch.store.CollapsingHighestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.CollapsingLowestDenseStore;
@@ -275,7 +275,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      */
     public static DDSketch balanced(double relativeAccuracy) {
         return new DDSketch(
-                new QuadraticallyInterpolatedMapping(relativeAccuracy),
+                new CubicallyInterpolatedMapping(relativeAccuracy),
                 UnboundedSizeDenseStore::new
         );
     }
@@ -291,7 +291,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      */
     public static DDSketch balancedCollapsingLowest(double relativeAccuracy, int maxNumBins) {
         return new DDSketch(
-                new QuadraticallyInterpolatedMapping(relativeAccuracy),
+                new CubicallyInterpolatedMapping(relativeAccuracy),
                 () -> new CollapsingLowestDenseStore(maxNumBins)
         );
     }
@@ -307,7 +307,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      */
     public static DDSketch balancedCollapsingHighest(double relativeAccuracy, int maxNumBins) {
         return new DDSketch(
-                new QuadraticallyInterpolatedMapping(relativeAccuracy),
+                new CubicallyInterpolatedMapping(relativeAccuracy),
                 () -> new CollapsingHighestDenseStore(maxNumBins)
         );
     }

@@ -31,6 +31,12 @@ package com.datadoghq.sketch.ddsketch.mapping;
  * <td>100% (reference)</td>
  * </tr>
  * <tr>
+ * <td>{@link CubicallyInterpolatedMapping}</td>
+ * <td>~1% ({@code 7/(10*log(2))-1})</td>
+ * <td>~1% ({@code 7/(10*log(2))-1})</td>
+ * <td>~30%</td>
+ * </tr>
+ * <tr>
  * <td>{@link QuadraticallyInterpolatedMapping}</td>
  * <td>~8% ({@code 3/(4*log(2))-1})</td>
  * <td>~8% ({@code 3/(4*log(2))-1})</td>
@@ -50,6 +56,11 @@ package com.datadoghq.sketch.ddsketch.mapping;
  * </tr>
  * <caption>Comparison of various implementations of {@code IndexMapping}</caption>
  * </table>
+ * <p>
+ * {@link CubicallyInterpolatedMapping}, which uses a polynomial of degree 3 to approximate the logarithm is a good
+ * compromise as its memory overhead compared to the optimal logarithmic mapping is only 1%, and it is about 3 times
+ * faster than the logarithmic mapping. Using a polynomial of higher degree would not yield a significant gain in memory
+ * efficiency (less than 1%), while it would degrade its insertion speed to some extent.
  */
 public interface IndexMapping {
 
