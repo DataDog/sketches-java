@@ -76,7 +76,7 @@ public class SparseStore implements Store {
 
         final Iterator<Entry<Integer, Long>> iterator = bins.entrySet().iterator();
 
-        return new Iterator<>() {
+        return new Iterator<Bin>() {
             @Override
             public boolean hasNext() {
                 return iterator.hasNext();

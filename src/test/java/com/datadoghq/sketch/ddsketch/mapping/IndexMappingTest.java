@@ -6,7 +6,6 @@
 package com.datadoghq.sketch.ddsketch.mapping;
 
 import com.datadoghq.sketch.util.accuracy.RelativeAccuracyTester;
-import java.util.stream.DoubleStream;
 import org.junit.jupiter.api.Test;
 
 abstract class IndexMappingTest {
@@ -19,7 +18,9 @@ abstract class IndexMappingTest {
 
     @Test
     void testAccuracy() {
-        getRelativeAccuraciesToTest().forEach(relativeAccuracy -> {
+        for (double relativeAccuracy = maxTestedRelativeAccuracy;
+             relativeAccuracy >= minTestedRelativeAccuracy;
+             relativeAccuracy *= maxTestedRelativeAccuracy) {
 
             final IndexMapping mapping = getMapping(relativeAccuracy);
 
@@ -37,15 +38,7 @@ abstract class IndexMappingTest {
                     maxRelativeAccuracy
             ));
              */
-        });
-    }
-
-    private DoubleStream getRelativeAccuraciesToTest() {
-        return DoubleStream.iterate(
-            maxTestedRelativeAccuracy,
-            relativeAccuracy -> relativeAccuracy >= minTestedRelativeAccuracy,
-            relativeAccuracy -> relativeAccuracy * maxTestedRelativeAccuracy
-        );
+        }
     }
 
     private static double assertRelativelyAccurate(IndexMapping mapping, double value) {

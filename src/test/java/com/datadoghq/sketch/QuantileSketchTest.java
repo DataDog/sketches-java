@@ -101,13 +101,12 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
             Arrays.sort(sortedValues);
             assertAccurate(merged, sortedValues, 0, sketch.getMinValue());
             assertAccurate(merged, sortedValues, 1, sketch.getMaxValue());
-            DoubleStream.iterate(0, quantile -> quantile <= 1, quantile -> quantile + 0.01)
-                .forEach(quantile -> {
-                    assertAccurate(merged, sortedValues, quantile, sketch.getValueAtQuantile(quantile));
-                    final double[] quantileValues = sketch.getValuesAtQuantiles(new double[]{ quantile });
-                    assertEquals(quantileValues.length, 1);
-                    assertAccurate(merged, sortedValues, quantile, quantileValues[0]);
-                });
+            for (double quantile = 0; quantile <= 1; quantile += 0.01) {
+                assertAccurate(merged, sortedValues, quantile, sketch.getValueAtQuantile(quantile));
+                final double[] quantileValues = sketch.getValuesAtQuantiles(new double[]{ quantile });
+                assertEquals(quantileValues.length, 1);
+                assertAccurate(merged, sortedValues, quantile, quantileValues[0]);
+            }
         }
     }
 

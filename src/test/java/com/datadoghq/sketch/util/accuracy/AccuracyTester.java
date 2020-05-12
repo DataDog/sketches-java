@@ -48,17 +48,11 @@ public abstract class AccuracyTester {
 
     public double testAllQuantiles(DoubleUnaryOperator quantileSketch, double quantileIncrement) {
 
-        return DoubleStream.concat(
-            DoubleStream.iterate(
-                0,
-                quantile -> quantile <= 1,
-                quantile -> quantile + quantileIncrement
-            ),
-            DoubleStream.of(1) // explicitly test 1 no matter what the increment is
-        )
-            .map(quantile -> test(quantileSketch, quantile))
-            .max()
-            .orElseThrow();
+        double maxError = 0;
+        for (double quantile = 0; quantile < 1; quantile += quantileIncrement) {
+            maxError = Math.max(maxError, test(quantileSketch, quantile));
+        }
+        return Math.max(maxError, test(quantileSketch, 1)); // explicitly test 1 no matter what the increment is
     }
 
     public void assertAccurate(double maxExpected, DoubleUnaryOperator quantileSketch) {
