@@ -29,7 +29,7 @@ abstract class CollapsingLowestDenseStoreTest extends StoreTest {
         if (!maxIndex.isPresent()) {
             return Collections.emptyMap();
         }
-        final int minStorableIndex = maxIndex.getAsInt() - maxNumBins() + 1;
+        final int minStorableIndex = (int) Math.max(Integer.MIN_VALUE, (long) maxIndex.getAsInt() - maxNumBins() + 1);
         return Arrays.stream(bins)
             .collect(Collectors.groupingBy(
                 bin -> Math.max(bin.getIndex(), minStorableIndex),

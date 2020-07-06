@@ -59,6 +59,18 @@ abstract class StoreTest {
             assertThrows(NoSuchElementException.class, store::getMaxIndex);
         } else {
             assertFalse(store.isEmpty());
+            final int expectedMinIndex = expectedCounts.entrySet().stream()
+                    .filter(entry -> entry.getValue() != 0)
+                    .mapToInt(Entry::getKey)
+                    .min()
+                    .getAsInt();
+            assertEquals(expectedMinIndex, store.getMinIndex());
+            final int expectedMaxIndex = expectedCounts.entrySet().stream()
+                    .filter(entry -> entry.getValue() != 0)
+                    .mapToInt(Entry::getKey)
+                    .max()
+                    .getAsInt();
+            assertEquals(expectedMaxIndex, store.getMaxIndex());
         }
         assertSameCounts(expectedCounts, getCounts(store.getStream()));
         assertSameCounts(expectedCounts, getCounts(store.getAscendingStream()));
@@ -174,6 +186,16 @@ abstract class StoreTest {
     }
 
     @Test
+    void testExtremeValues() {
+        testAdding(Integer.MIN_VALUE);
+        testAdding(Integer.MAX_VALUE);
+        testAdding(0, Integer.MIN_VALUE);
+        testAdding(0, Integer.MAX_VALUE);
+        testAdding(Integer.MIN_VALUE, Integer.MAX_VALUE);
+        testAdding(Integer.MAX_VALUE, Integer.MIN_VALUE);
+    }
+
+    @Test
     void testMergingEmpty() {
         testMerging(new int[]{}, new int[]{});
         testMerging(new int[]{}, new int[]{ 0 });
@@ -192,6 +214,20 @@ abstract class StoreTest {
     void testMergingConstant() {
         testMerging(new int[]{ 2, 2 }, new int[]{ 2, 2, 2 }, new int[]{ 2 });
         testMerging(new int[]{ -8, -8 }, new int[]{}, new int[]{ -8 });
+    }
+
+    @Test
+    void testMergingExtremeValues() {
+        testMerging(new int[]{ 0 }, new int[]{ Integer.MIN_VALUE });
+        testMerging(new int[]{ 0 }, new int[]{ Integer.MAX_VALUE });
+        testMerging(new int[]{ Integer.MIN_VALUE }, new int[]{ 0 });
+        testMerging(new int[]{ Integer.MAX_VALUE }, new int[]{ 0 });
+        testMerging(new int[]{ Integer.MIN_VALUE }, new int[]{ Integer.MIN_VALUE });
+        testMerging(new int[]{ Integer.MAX_VALUE }, new int[]{ Integer.MAX_VALUE });
+        testMerging(new int[]{ Integer.MIN_VALUE }, new int[]{ Integer.MAX_VALUE });
+        testMerging(new int[]{ Integer.MAX_VALUE }, new int[]{ Integer.MIN_VALUE });
+        testMerging(new int[]{ 0 }, new int[]{ Integer.MIN_VALUE, Integer.MAX_VALUE });
+        testMerging(new int[]{ Integer.MIN_VALUE, Integer.MAX_VALUE }, new int[]{ 0 });
     }
 
     @Test

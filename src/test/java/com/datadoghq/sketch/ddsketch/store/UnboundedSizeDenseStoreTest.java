@@ -11,4 +11,16 @@ class UnboundedSizeDenseStoreTest extends ExhaustiveStoreTest {
     Store newStore() {
         return new UnboundedSizeDenseStore();
     }
+
+    @Override
+    void testExtremeValues() {
+        // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one another as it
+        // would allocate an excessively large array.
+    }
+
+    @Override
+    void testMergingExtremeValues() {
+        // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one another as it
+        // would allocate an excessively large array.
+    }
 }
