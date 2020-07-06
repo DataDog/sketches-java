@@ -8,7 +8,6 @@ package com.datadoghq.sketch.ddsketch.store;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -109,14 +108,14 @@ public abstract class DenseStore implements Store {
 
         if (isEmpty()) {
 
-            final int initialLength = getNewLength(newMaxIndex - newMinIndex + 1);
+            final int initialLength = Math.toIntExact(getNewLength(newMinIndex, newMaxIndex));
             counts = new long[initialLength];
             offset = newMinIndex;
             minIndex = newMinIndex;
             maxIndex = newMinIndex;
             adjust(newMinIndex, newMaxIndex);
 
-        } else if (newMinIndex >= offset && newMaxIndex < offset + counts.length) {
+        } else if (newMinIndex >= offset && newMaxIndex < (long) offset + counts.length) {
 
             minIndex = newMinIndex;
             maxIndex = newMaxIndex;
@@ -126,8 +125,7 @@ public abstract class DenseStore implements Store {
             // To avoid shifting too often when nearing the capacity of the array,
             // we may grow it before we actually reach the capacity.
 
-            final int desiredLength = newMaxIndex - newMinIndex + 1;
-            final int newLength = getNewLength(desiredLength);
+            final int newLength = Math.toIntExact(getNewLength(newMinIndex, newMaxIndex));
             if (newLength > counts.length) {
                 counts = Arrays.copyOf(counts, newLength);
             }
@@ -190,9 +188,10 @@ public abstract class DenseStore implements Store {
         return maxIndex;
     }
 
-    int getNewLength(int desiredLength) {
+    long getNewLength(int newMinIndex, int newMaxIndex) {
+        final long desiredLength = (long) newMaxIndex - newMinIndex + 1;
         return ((desiredLength + arrayLengthOverhead - 1) / arrayLengthGrowthIncrement + 1)
-            * arrayLengthGrowthIncrement;
+                * arrayLengthGrowthIncrement;
     }
 
     @Override
@@ -243,7 +242,7 @@ public abstract class DenseStore implements Store {
 
         return new Iterator<Bin>() {
 
-            private int index = minIndex;
+            private long index = minIndex;
 
             @Override
             public boolean hasNext() {
@@ -252,7 +251,8 @@ public abstract class DenseStore implements Store {
 
             @Override
             public Bin next() {
-                return new Bin(index, counts[index++ - offset]);
+                final int intIndex = Math.toIntExact(index++);
+                return new Bin(intIndex, counts[intIndex - offset]);
             }
         };
     }
@@ -262,7 +262,7 @@ public abstract class DenseStore implements Store {
 
         return new Iterator<Bin>() {
 
-            private int index = maxIndex;
+            private long index = maxIndex;
 
             @Override
             public boolean hasNext() {
@@ -271,7 +271,8 @@ public abstract class DenseStore implements Store {
 
             @Override
             public Bin next() {
-                return new Bin(index, counts[index-- - offset]);
+                final int intIndex = Math.toIntExact(index--);
+                return new Bin(intIndex, counts[intIndex - offset]);
             }
         };
     }

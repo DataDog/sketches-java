@@ -37,7 +37,7 @@ public class CollapsingHighestDenseStore extends CollapsingDenseStore {
     @Override
     void adjust(int newMinIndex, int newMaxIndex) {
 
-        if (newMaxIndex - newMinIndex + 1 > counts.length) {
+        if ((long) newMaxIndex - newMinIndex + 1 > counts.length) {
 
             // The range of indices is too wide, buckets of lowest indices need to be collapsed.
 
@@ -116,7 +116,12 @@ public class CollapsingHighestDenseStore extends CollapsingDenseStore {
         for (; index > maxIndex && index >= store.minIndex; index--) {
             counts[counts.length - 1] += store.counts[index - store.offset];
         }
-        for (; index >= store.minIndex; index--) {
+        for (; index > store.minIndex; index--) {
+            counts[index - offset] += store.counts[index - store.offset];
+        }
+        // This is a separate test so that the comparison in the previous loop is strict (>) and handles
+        // store.minIndex = Integer.MIN_VALUE.
+        if (index == store.minIndex) {
             counts[index - offset] += store.counts[index - store.offset];
         }
     }
