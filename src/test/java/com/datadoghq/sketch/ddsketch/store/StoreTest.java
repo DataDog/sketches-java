@@ -59,6 +59,18 @@ abstract class StoreTest {
             assertThrows(NoSuchElementException.class, store::getMaxIndex);
         } else {
             assertFalse(store.isEmpty());
+            final int expectedMinIndex = expectedCounts.entrySet().stream()
+                    .filter(entry -> entry.getValue() != 0)
+                    .mapToInt(Entry::getKey)
+                    .min()
+                    .getAsInt();
+            assertEquals(expectedMinIndex, store.getMinIndex());
+            final int expectedMaxIndex = expectedCounts.entrySet().stream()
+                    .filter(entry -> entry.getValue() != 0)
+                    .mapToInt(Entry::getKey)
+                    .max()
+                    .getAsInt();
+            assertEquals(expectedMaxIndex, store.getMaxIndex());
         }
         assertSameCounts(expectedCounts, getCounts(store.getStream()));
         assertSameCounts(expectedCounts, getCounts(store.getAscendingStream()));
