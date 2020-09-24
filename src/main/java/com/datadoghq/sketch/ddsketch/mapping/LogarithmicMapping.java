@@ -16,6 +16,13 @@ public class LogarithmicMapping extends LogLikeIndexMapping {
         super(relativeAccuracy);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    LogarithmicMapping(double gamma, double indexOffset) {
+        super(gamma, indexOffset);
+    }
+
     @Override
     double log(double value) {
         return Math.log(value);

@@ -13,6 +13,7 @@ abstract class LogLikeIndexMapping implements IndexMapping {
 
     private final double relativeAccuracy;
     private final double multiplier;
+    private final double normalizedIndexOffset;
 
     LogLikeIndexMapping(double relativeAccuracy) {
         if (relativeAccuracy <= 0 || relativeAccuracy >= 1) {
@@ -21,6 +22,23 @@ abstract class LogLikeIndexMapping implements IndexMapping {
         this.relativeAccuracy = relativeAccuracy;
         this.multiplier = correctingFactor() * Math.log(base())
             / (Math.log((1 + relativeAccuracy) / (1 - relativeAccuracy)));
+        this.normalizedIndexOffset = 0;
+    }
+
+    /**
+     * Constructs a mapping that approximates x -> log(x) + indexOffset, where log is to the base gamma.
+     *
+     * @param gamma       the base of the logarithm that the constructed mapping approaches
+     * @param indexOffset the value such that {@code logInverse(indexOffset / multiplier)} is the left bound of the
+     *                    bucket of index 0
+     */
+    LogLikeIndexMapping(double gamma, double indexOffset) {
+        if (gamma <= 1) {
+            throw new IllegalArgumentException("gamma must be greater than 1.");
+        }
+        this.relativeAccuracy = 1 - 2 / (1 + Math.exp(correctingFactor() * Math.log(gamma)));
+        this.multiplier = Math.log(base()) / Math.log(gamma);
+        this.normalizedIndexOffset = indexOffset - log(1) * this.multiplier;
     }
 
     /**
@@ -47,25 +65,25 @@ abstract class LogLikeIndexMapping implements IndexMapping {
     abstract double correctingFactor();
 
     @Override
-    public int index(double value) {
-        final double index = log(value) * multiplier;
+    public final int index(double value) {
+        final double index = log(value) * multiplier + normalizedIndexOffset;
         return index >= 0 ? (int) index : (int) index - 1; // faster than Math::floor
     }
 
     @Override
-    public double value(int index) {
-        return logInverse((double) index / multiplier) * (1 + relativeAccuracy);
+    public final double value(int index) {
+        return logInverse((index - normalizedIndexOffset) / multiplier) * (1 + relativeAccuracy);
     }
 
     @Override
-    public double relativeAccuracy() {
+    public final double relativeAccuracy() {
         return relativeAccuracy;
     }
 
     @Override
     public double minIndexableValue() {
         return Math.max(
-            Math.pow(base(), Integer.MIN_VALUE / multiplier - log(1) + 1), // so that index >= Integer.MIN_VALUE
+            Math.pow(base(), (Integer.MIN_VALUE - normalizedIndexOffset) / multiplier - log(1) + 1), // so that index >= Integer.MIN_VALUE
             Double.MIN_NORMAL * (1 + relativeAccuracy) / (1 - relativeAccuracy)
         );
     }
@@ -73,7 +91,7 @@ abstract class LogLikeIndexMapping implements IndexMapping {
     @Override
     public double maxIndexableValue() {
         return Math.min(
-            Math.pow(base(), Integer.MAX_VALUE / multiplier - log(1) - 1), // so that index <= Integer.MAX_VALUE
+            Math.pow(base(), (Integer.MAX_VALUE - normalizedIndexOffset) / multiplier - log(1) - 1), // so that index <= Integer.MAX_VALUE
             Double.MAX_VALUE / (1 + relativeAccuracy)
         );
     }
@@ -86,11 +104,13 @@ abstract class LogLikeIndexMapping implements IndexMapping {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return Double.compare(relativeAccuracy, ((LogLikeIndexMapping) o).relativeAccuracy) == 0;
+        final LogLikeIndexMapping that = (LogLikeIndexMapping) o;
+        return Double.compare(that.multiplier, multiplier) == 0 &&
+            Double.compare(that.normalizedIndexOffset, normalizedIndexOffset) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(relativeAccuracy);
+        return Objects.hash(multiplier, normalizedIndexOffset);
     }
 }

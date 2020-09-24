@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 
 abstract class IndexMappingTest {
 
-    private final double minTestedRelativeAccuracy = 1e-8;
-    private final double maxTestedRelativeAccuracy = 1 - 1e-3;
-    private final double multiplier = 1 + Math.sqrt(2) * 1e-1;
+    final double minTestedRelativeAccuracy = 1e-8;
+    final double maxTestedRelativeAccuracy = 1 - 1e-3;
+    final double multiplier = 1 + Math.sqrt(2) * 1e-1;
 
     abstract IndexMapping getMapping(double relativeAccuracy);
 
@@ -21,15 +21,18 @@ abstract class IndexMappingTest {
         for (double relativeAccuracy = maxTestedRelativeAccuracy;
              relativeAccuracy >= minTestedRelativeAccuracy;
              relativeAccuracy *= maxTestedRelativeAccuracy) {
+            testAccuracy(getMapping(relativeAccuracy), relativeAccuracy);
+        }
+    }
 
-            final IndexMapping mapping = getMapping(relativeAccuracy);
+    void testAccuracy(IndexMapping mapping, double relativeAccuracy) {
 
-            // Assert that the stated relative accuracy of the mapping is less than or equal to the requested one.
-            RelativeAccuracyTester.assertAccurate(relativeAccuracy, mapping.relativeAccuracy());
+        // Assert that the stated relative accuracy of the mapping is less than or equal to the requested one.
+        RelativeAccuracyTester.assertAccurate(relativeAccuracy, mapping.relativeAccuracy());
 
-            final double maxRelativeAccuracy = assertRelativelyAccurate(mapping);
+        final double maxRelativeAccuracy = assertRelativelyAccurate(mapping);
 
-            // Handy to check that the actual accuracy is consistent with the claimed one (i.e., not much lower).
+        // Handy to check that the actual accuracy is consistent with the claimed one (i.e., not much lower).
             /*
             System.out.println(String.format(
                     "Relative accuracy - Requested: %g, claimed: %g, actual: %g",
@@ -38,7 +41,6 @@ abstract class IndexMappingTest {
                     maxRelativeAccuracy
             ));
              */
-        }
     }
 
     private static double assertRelativelyAccurate(IndexMapping mapping, double value) {

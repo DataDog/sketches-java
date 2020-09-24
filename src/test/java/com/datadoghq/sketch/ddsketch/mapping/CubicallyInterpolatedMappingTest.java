@@ -1,9 +1,14 @@
 package com.datadoghq.sketch.ddsketch.mapping;
 
-public class CubicallyInterpolatedMappingTest extends IndexMappingTest {
+class CubicallyInterpolatedMappingTest extends LogLikeIndexMappingTest {
 
     @Override
-    IndexMapping getMapping(double relativeAccuracy) {
+    CubicallyInterpolatedMapping getMapping(double relativeAccuracy) {
         return new CubicallyInterpolatedMapping(relativeAccuracy);
+    }
+
+    @Override
+    CubicallyInterpolatedMapping getMapping(double gamma, double indexOffset) {
+        return new CubicallyInterpolatedMapping(gamma, indexOffset);
     }
 }

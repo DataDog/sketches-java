@@ -16,6 +16,13 @@ public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
         super(relativeAccuracy);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    LinearlyInterpolatedMapping(double gamma, double indexOffset) {
+        super(gamma, indexOffset);
+    }
+
     @Override
     double log(double value) {
         final long longBits = Double.doubleToRawLongBits(value);

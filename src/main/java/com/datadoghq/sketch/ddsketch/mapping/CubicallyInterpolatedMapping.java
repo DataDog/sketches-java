@@ -18,6 +18,13 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
         super(relativeAccuracy);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    CubicallyInterpolatedMapping(double gamma, double indexOffset) {
+        super(gamma, indexOffset);
+    }
+
     @Override
     double log(double value) {
         final long longBits = Double.doubleToRawLongBits(value);
