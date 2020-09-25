@@ -102,34 +102,34 @@ public interface Store {
     }
 
     /**
-     * @return a stream with the bins of this store as its source
+     * @return a stream with the non-empty bins of this store as its source
      */
     default Stream<Bin> getStream() {
         return getAscendingStream();
     }
 
     /**
-     * @return an ordered stream (from lowest to highest index) with the bins of this store as its source
+     * @return an ordered stream (from lowest to highest index) with the non-empty bins of this store as its source
      */
     default Stream<Bin> getAscendingStream() {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(getAscendingIterator(), 0), false);
     }
 
     /**
-     * @return an ordered stream (from highest to lowest index) with the bins of this store as its source
+     * @return an ordered stream (from highest to lowest index) with the non-empty bins of this store as its source
      */
     default Stream<Bin> getDescendingStream() {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(getDescendingIterator(), 0), false);
     }
 
     /**
-     * @return an iterator that iterates over the bins of this store, from lowest to highest index
+     * @return an iterator that iterates over the non-empty bins of this store, from lowest to highest index
      */
     // Needed because of JDK-8194952
     Iterator<Bin> getAscendingIterator();
 
     /**
-     * @return an iterator that iterates over the bins of this store, from highest to lowest index
+     * @return an iterator that iterates over the non-empty bins of this store, from highest to lowest index
      */
     // Needed because of JDK-8194952
     Iterator<Bin> getDescendingIterator();

@@ -222,8 +222,9 @@ public abstract class DenseStore implements Store {
             return Stream.of();
         }
         return IntStream
-            .range(0, counts.length)
-            .mapToObj(index -> new Bin(index + offset, counts[index]));
+            .rangeClosed(minIndex, maxIndex)
+            .filter(index -> counts[index - offset] > 0)
+            .mapToObj(index -> new Bin(index, counts[index - offset]));
     }
 
     @Override
@@ -232,9 +233,10 @@ public abstract class DenseStore implements Store {
             return Stream.of();
         }
         return IntStream
-            .iterate(counts.length - 1, index -> index - 1)
-            .limit(counts.length)
-            .mapToObj(index -> new Bin(index + offset, counts[index]));
+            .iterate(maxIndex, index -> index - 1)
+            .limit(maxIndex - minIndex + 1)
+            .filter(index -> counts[index - offset] > 0)
+            .mapToObj(index -> new Bin(index, counts[index - offset]));
     }
 
     @Override
@@ -251,8 +253,11 @@ public abstract class DenseStore implements Store {
 
             @Override
             public Bin next() {
-                final int intIndex = Math.toIntExact(index++);
-                return new Bin(intIndex, counts[intIndex - offset]);
+                final int nextIndex = (int) index;
+                do {
+                    index++;
+                } while (index <= maxIndex && counts[(int) index - offset] == 0);
+                return new Bin(nextIndex, counts[nextIndex - offset]);
             }
         };
     }
@@ -271,8 +276,11 @@ public abstract class DenseStore implements Store {
 
             @Override
             public Bin next() {
-                final int intIndex = Math.toIntExact(index--);
-                return new Bin(intIndex, counts[intIndex - offset]);
+                final int nextIndex = (int) index;
+                do {
+                    index--;
+                } while (index >= minIndex && counts[(int) index - offset] == 0);
+                return new Bin(nextIndex, counts[nextIndex - offset]);
             }
         };
     }
