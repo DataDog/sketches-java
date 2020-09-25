@@ -55,7 +55,7 @@ public interface QuantileSketch<QS extends QuantileSketch<QS>> extends DoubleCon
     /**
      * @return the total number of values that have been added to this sketch
      */
-    long getCount();
+    double getCount();
 
     /**
      * @return the minimum value that has been added to this sketch

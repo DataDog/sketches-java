@@ -47,7 +47,7 @@ public class CollapsingLowestDenseStore extends CollapsingDenseStore {
 
                 // There will be only one non-empty bucket.
 
-                final long totalCount = getTotalCount();
+                final double totalCount = getTotalCount();
                 resetCounts();
                 offset = newMinIndex;
                 minIndex = newMinIndex;
@@ -60,7 +60,7 @@ public class CollapsingLowestDenseStore extends CollapsingDenseStore {
                 if (shift < 0) {
 
                     // Collapse the buckets.
-                    final long collapsedCount = getTotalCount(minIndex, newMinIndex - 1);
+                    final double collapsedCount = getTotalCount(minIndex, newMinIndex - 1);
                     resetCounts(minIndex, newMinIndex - 1);
                     counts[newMinIndex - offset] += collapsedCount;
                     minIndex = newMinIndex;

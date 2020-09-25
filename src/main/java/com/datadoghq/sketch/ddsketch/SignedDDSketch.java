@@ -31,7 +31,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
 
     private final Store negativeValueStore;
     private final Store positiveValueStore;
-    private long zeroCount;
+    private double zeroCount;
 
     /**
      * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and
@@ -128,6 +128,17 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      */
     @Override
     public void accept(double value, long count) {
+        accept(value, (double) count);
+    }
+
+    /**
+     * Adds a value to the sketch with a floating-point {@code count}.
+     *
+     * @param value the value to be added
+     * @param count the weight associated with the value to be added
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    public void accept(double value, double count) {
 
         checkValueTrackable(value);
 
@@ -180,7 +191,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     }
 
     @Override
-    public long getCount() {
+    public double getCount() {
         return zeroCount + negativeValueStore.getTotalCount() + positiveValueStore.getTotalCount();
     }
 
@@ -213,13 +224,13 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
 
     @Override
     public double[] getValuesAtQuantiles(double[] quantiles) {
-        final long count = getCount();
+        final double count = getCount();
         return Arrays.stream(quantiles)
                 .map(quantile -> getValueAtQuantile(quantile, count))
                 .toArray();
     }
 
-    private double getValueAtQuantile(double quantile, long count) {
+    private double getValueAtQuantile(double quantile, double count) {
 
         if (quantile < 0 || quantile > 1) {
             throw new IllegalArgumentException("The quantile must be between 0 and 1.");
@@ -229,9 +240,9 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
             throw new NoSuchElementException();
         }
 
-        final long rank = (long) (quantile * (count - 1));
+        final double rank = quantile * (count - 1);
 
-        long n = 0;
+        double n = 0;
 
         Iterator<Bin> negativeBinIterator = negativeValueStore.getDescendingIterator();
         while (negativeBinIterator.hasNext()) {

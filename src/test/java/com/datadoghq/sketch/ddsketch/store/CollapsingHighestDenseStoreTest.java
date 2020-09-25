@@ -21,7 +21,7 @@ abstract class CollapsingHighestDenseStoreTest extends StoreTest {
     }
 
     @Override
-    Map<Integer, Long> getCounts(Bin... bins) {
+    Map<Integer, Double> getCounts(Bin... bins) {
         final OptionalInt minIndex = Arrays.stream(bins)
             .filter(bin -> bin.getCount() > 0)
             .mapToInt(Bin::getIndex)
@@ -33,7 +33,7 @@ abstract class CollapsingHighestDenseStoreTest extends StoreTest {
         return Arrays.stream(bins)
             .collect(Collectors.groupingBy(
                 bin -> Math.min(bin.getIndex(), maxStorableIndex),
-                Collectors.summingLong(Bin::getCount)
+                Collectors.summingDouble(Bin::getCount)
             ));
     }
 
