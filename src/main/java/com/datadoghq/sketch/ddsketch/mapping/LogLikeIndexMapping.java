@@ -7,7 +7,7 @@ import java.util.Objects;
  * <p>
  * That function is scaled depending on the targeted relative accuracy, the base of the logarithm that {@link #log}
  * approximates and how well it geometrically pulls apart values from one another, that is to say, the infimum of
- * |l(x)-l(y)|/|x-y| where x ≠ y and l = log∘exp (log being {@link #log}).
+ * |(l∘exp)(x)-(l∘exp)(y)|/|x-y| where x ≠ y and l = {@link #log}
  */
 abstract class LogLikeIndexMapping implements IndexMapping {
 
@@ -60,7 +60,8 @@ abstract class LogLikeIndexMapping implements IndexMapping {
 
     /**
      * @return a factor that corrects the fact that {@code log} may not geometrically pull apart values from one another
-     * as well as the logarithm
+     * as well as the logarithm; it is equal to the inverse of the infimum of log(b)⋅|(l∘exp)(x)-(l∘exp)(y)|/|x-y| where
+     * x ≠ y, b = {@link #base} and l = {@link #log}
      */
     abstract double correctingFactor();
 
