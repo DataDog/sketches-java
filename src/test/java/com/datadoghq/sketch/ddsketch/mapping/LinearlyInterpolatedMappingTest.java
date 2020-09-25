@@ -5,10 +5,15 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
-class LinearlyInterpolatedMappingTest extends IndexMappingTest {
+class LinearlyInterpolatedMappingTest extends LogLikeIndexMappingTest {
 
     @Override
-    IndexMapping getMapping(double relativeAccuracy) {
+    LinearlyInterpolatedMapping getMapping(double relativeAccuracy) {
         return new LinearlyInterpolatedMapping(relativeAccuracy);
+    }
+
+    @Override
+    LinearlyInterpolatedMapping getMapping(double gamma, double indexOffset) {
+        return new LinearlyInterpolatedMapping(gamma, indexOffset);
     }
 }
