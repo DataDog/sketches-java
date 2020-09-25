@@ -104,4 +104,13 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     public int hashCode() {
         return Objects.hash(numSignificantBinaryDigits);
     }
+
+    @Override
+    public com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
+            .setGamma(Math.pow(2, 1.0 / multiplier))
+            .setIndexOffset(0)
+            .setInterpolation(com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.LINEAR)
+            .build();
+    }
 }

@@ -46,4 +46,9 @@ public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
     double correctingFactor() {
         return 1 / Math.log(2);
     }
+
+    @Override
+    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.LINEAR;
+    }
 }

@@ -1,0 +1,35 @@
+/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2020 Datadog, Inc.
+ */
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.datadoghq.sketch.ddsketch.proto";
+option java_outer_classname = "DDSketchProto";
+
+message DDSketch {
+  IndexMapping mapping = 1;
+  Store positiveValues = 2;
+  Store negativeValues = 3;
+  double zeroCount = 4;
+}
+
+message IndexMapping {
+  double gamma = 1;
+  double indexOffset = 2;
+  Interpolation interpolation = 3;
+  enum Interpolation {
+    NONE = 0;
+    LINEAR = 1;
+    QUADRATIC = 2;
+    CUBIC = 3;
+  }
+}
+
+message Store {
+  map<sint32, double> binCounts = 1;
+  repeated double contiguousBinCounts = 2 [packed = true];
+  sint32 contiguousBinIndexOffset = 3;
+}

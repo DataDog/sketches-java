@@ -49,4 +49,9 @@ public class QuadraticallyInterpolatedMapping extends LogLikeIndexMapping {
     double correctingFactor() {
         return 3 / (4 * Math.log(2));
     }
+
+    @Override
+    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.QUADRATIC;
+    }
 }

@@ -191,7 +191,7 @@ public abstract class DenseStore implements Store {
     long getNewLength(int newMinIndex, int newMaxIndex) {
         final long desiredLength = (long) newMaxIndex - newMinIndex + 1;
         return ((desiredLength + arrayLengthOverhead - 1) / arrayLengthGrowthIncrement + 1)
-                * arrayLengthGrowthIncrement;
+            * arrayLengthGrowthIncrement;
     }
 
     @Override
@@ -283,5 +283,18 @@ public abstract class DenseStore implements Store {
                 return new Bin(nextIndex, counts[nextIndex - offset]);
             }
         };
+    }
+
+    @Override
+    public com.datadoghq.sketch.ddsketch.proto.Store toProto() {
+        final com.datadoghq.sketch.ddsketch.proto.Store.Builder builder =
+            com.datadoghq.sketch.ddsketch.proto.Store.newBuilder();
+        if (counts != null) {
+            builder.setContiguousBinIndexOffset(minIndex);
+            for (long index = minIndex; index <= maxIndex; index++) {
+                builder.addContiguousBinCounts(counts[(int) index - offset]);
+            }
+        }
+        return builder.build();
     }
 }

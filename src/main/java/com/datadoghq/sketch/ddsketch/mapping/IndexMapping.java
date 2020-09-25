@@ -73,4 +73,10 @@ public interface IndexMapping {
     double minIndexableValue();
 
     double maxIndexableValue();
+
+    com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto();
+
+    static IndexMapping fromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping proto) {
+        return LogLikeIndexMapping.fromProto(proto);
+    }
 }

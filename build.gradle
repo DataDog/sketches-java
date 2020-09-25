@@ -2,6 +2,8 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
+    id 'com.google.protobuf' version '0.8.13'
+    id 'idea'
 }
 
 repositories {
@@ -10,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.google.protobuf:protobuf-java:3.13.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.2'
 }

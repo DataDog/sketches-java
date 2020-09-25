@@ -33,6 +33,30 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     private final Store positiveValueStore;
     private double zeroCount;
 
+    private SignedDDSketch(
+        IndexMapping indexMapping,
+        Store negativeValueStore,
+        Store positiveValueStore,
+        double zeroCount,
+        double minIndexedValue
+    ) {
+        this.indexMapping = indexMapping;
+        this.minIndexedValue = Math.max(minIndexedValue, indexMapping.minIndexableValue());
+        this.maxIndexedValue = indexMapping.maxIndexableValue();
+        this.negativeValueStore = negativeValueStore;
+        this.positiveValueStore = positiveValueStore;
+        this.zeroCount = zeroCount;
+    }
+
+    private SignedDDSketch(
+        IndexMapping indexMapping,
+        Store negativeValueStore,
+        Store positiveValueStore,
+        double zeroCount
+    ) {
+        this(indexMapping, negativeValueStore, positiveValueStore, zeroCount, 0);
+    }
+
     /**
      * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and
      * {@link Store} supplier.
@@ -53,10 +77,11 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      */
     public SignedDDSketch(
-            IndexMapping indexMapping,
-            Supplier<Store> negativeValueStoreSupplier,
-            Supplier<Store> positiveValueStoreSupplier) {
-        this(indexMapping, negativeValueStoreSupplier, positiveValueStoreSupplier, 0);
+        IndexMapping indexMapping,
+        Supplier<Store> negativeValueStoreSupplier,
+        Supplier<Store> positiveValueStoreSupplier
+    ) {
+        this(indexMapping, negativeValueStoreSupplier.get(), positiveValueStoreSupplier.get(), 0);
     }
 
     /**
@@ -69,16 +94,12 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      * @param minIndexedValue the least value that should be distinguished from zero
      */
     public SignedDDSketch(
-            IndexMapping indexMapping,
-            Supplier<Store> negativeValueStoreSupplier,
-            Supplier<Store> positiveValueStoreSupplier,
-            double minIndexedValue) {
-        this.indexMapping = indexMapping;
-        this.minIndexedValue = Math.max(minIndexedValue, indexMapping.minIndexableValue());
-        this.maxIndexedValue = indexMapping.maxIndexableValue();
-        this.negativeValueStore = negativeValueStoreSupplier.get();
-        this.positiveValueStore = positiveValueStoreSupplier.get();
-        this.zeroCount = 0;
+        IndexMapping indexMapping,
+        Supplier<Store> negativeValueStoreSupplier,
+        Supplier<Store> positiveValueStoreSupplier,
+        double minIndexedValue
+    ) {
+        this(indexMapping, negativeValueStoreSupplier.get(), positiveValueStoreSupplier.get(), 0, minIndexedValue);
     }
 
     private SignedDDSketch(SignedDDSketch sketch) {
@@ -171,7 +192,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
 
         if (!indexMapping.equals(other.indexMapping)) {
             throw new IllegalArgumentException(
-                    "The sketches are not mergeable because they do not use the same index mappings."
+                "The sketches are not mergeable because they do not use the same index mappings."
             );
         }
 
@@ -226,8 +247,8 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     public double[] getValuesAtQuantiles(double[] quantiles) {
         final double count = getCount();
         return Arrays.stream(quantiles)
-                .map(quantile -> getValueAtQuantile(quantile, count))
-                .toArray();
+            .map(quantile -> getValueAtQuantile(quantile, count))
+            .toArray();
     }
 
     private double getValueAtQuantile(double quantile, double count) {
@@ -267,4 +288,24 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
         throw new NoSuchElementException();
     }
 
+    public com.datadoghq.sketch.ddsketch.proto.DDSketch toProto() {
+        return com.datadoghq.sketch.ddsketch.proto.DDSketch.newBuilder()
+            .setPositiveValues(positiveValueStore.toProto())
+            .setNegativeValues(negativeValueStore.toProto())
+            .setZeroCount(zeroCount)
+            .setMapping(indexMapping.toProto())
+            .build();
+    }
+
+    public static SignedDDSketch fromProto(
+        Supplier<? extends Store> storeSupplier,
+        com.datadoghq.sketch.ddsketch.proto.DDSketch proto
+    ) {
+        return new SignedDDSketch(
+            IndexMapping.fromProto(proto.getMapping()),
+            Store.fromProto(storeSupplier, proto.getNegativeValues()),
+            Store.fromProto(storeSupplier, proto.getPositiveValues()),
+            proto.getZeroCount()
+        );
+    }
 }

@@ -8,6 +8,7 @@ package com.datadoghq.sketch.ddsketch.store;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterators;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -144,4 +145,24 @@ public interface Store {
      */
     // Needed because of JDK-8194952
     Iterator<Bin> getDescendingIterator();
+
+    default com.datadoghq.sketch.ddsketch.proto.Store toProto() {
+        final com.datadoghq.sketch.ddsketch.proto.Store.Builder storeBuilder =
+            com.datadoghq.sketch.ddsketch.proto.Store.newBuilder();
+        getStream().forEach(bin -> storeBuilder.putBinCounts(bin.getIndex(), bin.getCount()));
+        return storeBuilder.build();
+    }
+
+    static <S extends Store> S fromProto(
+        Supplier<? extends S> storeSupplier,
+        com.datadoghq.sketch.ddsketch.proto.Store proto
+    ) {
+        final S store = storeSupplier.get();
+        proto.getBinCountsMap().forEach(store::add);
+        int index = proto.getContiguousBinIndexOffset();
+        for (final double count : proto.getContiguousBinCountsList()) {
+            store.add(index++, count);
+        }
+        return store;
+    }
 }

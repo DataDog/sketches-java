@@ -14,6 +14,8 @@ import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import java.util.function.Supplier;
+
+import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import org.junit.jupiter.api.Test;
 
 abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
@@ -50,7 +52,8 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
         final double minExpected = lowerQuantileValue * (1 - relativeAccuracy());
         final double maxExpected = upperQuantileValue * (1 + relativeAccuracy());
 
-        if (actualQuantileValue < minExpected || actualQuantileValue > maxExpected) {
+        if (actualQuantileValue < minExpected - AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR ||
+            actualQuantileValue > maxExpected + AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR) {
             fail();
         }
     }
@@ -67,6 +70,13 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
             IllegalArgumentException.class,
             () -> sketch.accept(-1)
         );
+    }
+
+    @Override
+    protected void test(boolean merged, double[] values, DDSketch sketch) {
+        assertEncodes(merged, values, sketch);
+        // Test protobuf round-trip
+        assertEncodes(merged, values, DDSketch.fromProto(storeSupplier(), sketch.toProto()));
     }
 
     static class DDSketchTest1 extends DDSketchTest {
