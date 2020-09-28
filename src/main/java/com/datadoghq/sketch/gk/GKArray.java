@@ -129,7 +129,7 @@ public class GKArray implements QuantileSketch<GKArray> {
     }
 
     @Override
-    public long getCount() {
+    public double getCount() {
         if (incomingIndex > 0) {
             compress();
         }

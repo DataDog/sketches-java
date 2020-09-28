@@ -19,7 +19,7 @@ public abstract class DenseStore implements Store {
     private final int arrayLengthGrowthIncrement;
     private final int arrayLengthOverhead;
 
-    long[] counts;
+    double[] counts;
     int offset;
     int minIndex;
     int maxIndex;
@@ -60,7 +60,7 @@ public abstract class DenseStore implements Store {
     }
 
     @Override
-    public void add(int index, long count) {
+    public void add(int index, double count) {
         if (count < 0) {
             throw new IllegalArgumentException("The count cannot be negative.");
         }
@@ -109,7 +109,7 @@ public abstract class DenseStore implements Store {
         if (isEmpty()) {
 
             final int initialLength = Math.toIntExact(getNewLength(newMinIndex, newMaxIndex));
-            counts = new long[initialLength];
+            counts = new double[initialLength];
             offset = newMinIndex;
             minIndex = newMinIndex;
             maxIndex = newMinIndex;
@@ -195,11 +195,11 @@ public abstract class DenseStore implements Store {
     }
 
     @Override
-    public long getTotalCount() {
+    public double getTotalCount() {
         return getTotalCount(minIndex, maxIndex);
     }
 
-    long getTotalCount(int fromIndex, int toIndex) {
+    double getTotalCount(int fromIndex, int toIndex) {
 
         if (isEmpty()) {
             return 0;
@@ -208,7 +208,7 @@ public abstract class DenseStore implements Store {
         final int fromArrayIndex = Math.max(fromIndex - offset, 0);
         final int toArrayIndex = Math.min(toIndex - offset, counts.length - 1);
 
-        long totalCount = 0;
+        double totalCount = 0;
         for (int arrayIndex = fromArrayIndex; arrayIndex <= toArrayIndex; arrayIndex++) {
             totalCount += counts[arrayIndex];
         }

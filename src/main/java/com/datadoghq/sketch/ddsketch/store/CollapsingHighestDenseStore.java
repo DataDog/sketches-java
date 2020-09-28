@@ -47,7 +47,7 @@ public class CollapsingHighestDenseStore extends CollapsingDenseStore {
 
                 // There will be only one non-empty bucket.
 
-                final long totalCount = getTotalCount();
+                final double totalCount = getTotalCount();
                 resetCounts();
                 offset = newMinIndex;
                 maxIndex = newMaxIndex;
@@ -60,7 +60,7 @@ public class CollapsingHighestDenseStore extends CollapsingDenseStore {
                 if (shift > 0) {
 
                     // Collapse the buckets.
-                    final long collapsedCount = getTotalCount(newMaxIndex + 1, maxIndex);
+                    final double collapsedCount = getTotalCount(newMaxIndex + 1, maxIndex);
                     resetCounts(newMaxIndex + 1, maxIndex);
                     counts[newMaxIndex - offset] += collapsedCount;
                     maxIndex = newMaxIndex;

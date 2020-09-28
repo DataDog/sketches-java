@@ -13,7 +13,7 @@ import java.util.Objects;
 public final class Bin {
 
     private final int index;
-    private final long count;
+    private final double count;
 
     /**
      * Constructs a bin.
@@ -22,7 +22,7 @@ public final class Bin {
      * @param count the count of the bin
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    public Bin(int index, long count) {
+    public Bin(int index, double count) {
         if (count < 0) {
             throw new IllegalArgumentException("The count cannot be negative.");
         }
@@ -34,7 +34,7 @@ public final class Bin {
         return index;
     }
 
-    public long getCount() {
+    public double getCount() {
         return count;
     }
 
@@ -48,7 +48,7 @@ public final class Bin {
         }
         final Bin bin = (Bin) o;
         return index == bin.index &&
-            count == bin.count;
+            Double.compare(bin.count, count) == 0;
     }
 
     @Override

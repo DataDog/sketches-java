@@ -56,7 +56,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     private final double maxIndexedValue;
 
     private final Store store;
-    private long zeroCount;
+    private double zeroCount;
 
     /**
      * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and {@link Store}
@@ -143,6 +143,17 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      */
     @Override
     public void accept(double value, long count) {
+        accept(value, (double) count);
+    }
+
+    /**
+     * Adds a value to the sketch with a floating-point {@code count}.
+     *
+     * @param value the value to be added
+     * @param count the weight associated with the value to be added
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    public void accept(double value, double count) {
 
         checkValueTrackable(value);
 
@@ -192,7 +203,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     }
 
     @Override
-    public long getCount() {
+    public double getCount() {
         return zeroCount + store.getTotalCount();
     }
 
@@ -221,13 +232,13 @@ public class DDSketch implements QuantileSketch<DDSketch> {
 
     @Override
     public double[] getValuesAtQuantiles(double[] quantiles) {
-        final long count = getCount();
+        final double count = getCount();
         return Arrays.stream(quantiles)
                 .map(quantile -> getValueAtQuantile(quantile, count))
                 .toArray();
     }
 
-    private double getValueAtQuantile(double quantile, long count) {
+    private double getValueAtQuantile(double quantile, double count) {
 
         if (quantile < 0 || quantile > 1) {
             throw new IllegalArgumentException("The quantile must be between 0 and 1.");
@@ -237,7 +248,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
             throw new NoSuchElementException();
         }
 
-        final long rank = (long) (quantile * (count - 1));
+        final double rank = quantile * (count - 1);
         if (rank < zeroCount) {
             return 0;
         }
@@ -246,7 +257,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         if (quantile <= 0.5) {
 
             final Iterator<Bin> binIterator = store.getAscendingIterator();
-            long n = zeroCount;
+            double n = zeroCount;
             do {
                 bin = binIterator.next();
                 n += bin.getCount();
@@ -255,7 +266,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         } else {
 
             final Iterator<Bin> binIterator = store.getDescendingIterator();
-            long n = count;
+            double n = count;
             do {
                 bin = binIterator.next();
                 n -= bin.getCount();

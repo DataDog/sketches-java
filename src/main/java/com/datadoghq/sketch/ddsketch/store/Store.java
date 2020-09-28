@@ -33,7 +33,18 @@ public interface Store {
      * @param count a non-negative integer value
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    void add(int index, long count);
+    default void add(int index, long count) {
+        add(index, (double) count);
+    }
+
+    /**
+     * Updates the counter at the specified index.
+     *
+     * @param index the index of the counter to be updated
+     * @param count a non-negative value
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    void add(int index, double count);
 
     /**
      * Updates the counter at the specified index.
@@ -64,16 +75,16 @@ public interface Store {
      */
     default boolean isEmpty() {
         return getStream()
-            .mapToLong(Bin::getCount)
+            .mapToDouble(Bin::getCount)
             .allMatch(count -> count == 0);
     }
 
     /**
      * @return the sum of the counters of this store
      */
-    default long getTotalCount() {
+    default double getTotalCount() {
         return getStream()
-            .mapToLong(Bin::getCount)
+            .mapToDouble(Bin::getCount)
             .sum();
     }
 

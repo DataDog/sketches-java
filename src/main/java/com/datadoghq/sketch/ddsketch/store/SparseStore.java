@@ -13,7 +13,7 @@ import java.util.TreeMap;
 
 public class SparseStore implements Store {
 
-    private final NavigableMap<Integer, Long> bins;
+    private final NavigableMap<Integer, Double> bins;
 
     public SparseStore() {
         this.bins = new TreeMap<>();
@@ -25,18 +25,18 @@ public class SparseStore implements Store {
 
     @Override
     public void add(int index) {
-        bins.merge(index, 1L, Long::sum);
+        bins.merge(index, 1.0, Double::sum);
     }
 
     @Override
-    public void add(int index, long count) {
+    public void add(int index, double count) {
         if (count < 0) {
             throw new IllegalArgumentException("The count cannot be negative.");
         }
         if (count == 0) {
             return;
         }
-        bins.merge(index, count, Long::sum);
+        bins.merge(index, count, Double::sum);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class SparseStore implements Store {
         if (bin.getCount() == 0) {
             return;
         }
-        bins.merge(bin.getIndex(), bin.getCount(), Long::sum);
+        bins.merge(bin.getIndex(), bin.getCount(), Double::sum);
     }
 
     @Override
@@ -72,9 +72,9 @@ public class SparseStore implements Store {
         return getBinIterator(bins.descendingMap());
     }
 
-    private static Iterator<Bin> getBinIterator(Map<Integer, Long> bins) {
+    private static Iterator<Bin> getBinIterator(Map<Integer, Double> bins) {
 
-        final Iterator<Entry<Integer, Long>> iterator = bins.entrySet().iterator();
+        final Iterator<Entry<Integer, Double>> iterator = bins.entrySet().iterator();
 
         return new Iterator<Bin>() {
             @Override
@@ -84,7 +84,7 @@ public class SparseStore implements Store {
 
             @Override
             public Bin next() {
-                final Entry<Integer, Long> nextEntry = iterator.next();
+                final Entry<Integer, Double> nextEntry = iterator.next();
                 return new Bin(nextEntry.getKey(), nextEntry.getValue());
             }
         };

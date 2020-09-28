@@ -14,7 +14,7 @@ import java.util.function.DoubleUnaryOperator;
 public abstract class AccuracyTester {
 
     private static final double DEFAULT_QUANTILE_INCREMENT = 0.01;
-    private static final double FLOATING_POINT_ACCEPTABLE_ERROR = 1e-12;
+    public static final double FLOATING_POINT_ACCEPTABLE_ERROR = 1e-12;
 
     private final double[] sortedValues;
 
