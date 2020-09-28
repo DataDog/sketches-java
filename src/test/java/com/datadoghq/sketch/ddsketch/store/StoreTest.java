@@ -43,11 +43,11 @@ abstract class StoreTest {
     }
 
     private static void assertSameCounts(Map<Integer, Long> expected, Map<Integer, Long> actual) {
-        assertEquals(getNonZeroCounts(expected), getNonZeroCounts(actual));
+        assertEquals(expected, actual);
     }
 
     private void assertEncodes(Bin[] bins, Store store) {
-        assertEncodes(getCounts(bins), store);
+        assertEncodes(getNonZeroCounts(getCounts(bins)), store);
     }
 
     private static void assertEncodes(Map<Integer, Long> expectedCounts, Store store) {
