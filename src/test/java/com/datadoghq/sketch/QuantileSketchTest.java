@@ -91,7 +91,11 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
         );
     }
 
-    void assertEncodes(boolean merged, double[] values, QS sketch) {
+    protected void test(boolean merged, double[] values, QS sketch) {
+        assertEncodes(merged, values, sketch);
+    }
+
+    protected final void assertEncodes(boolean merged, double[] values, QS sketch) {
         assertEquals(values.length, sketch.getCount());
         if (values.length == 0) {
             assertTrue(sketch.isEmpty());
@@ -114,14 +118,14 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
         {
             final QS sketch = newSketch();
             Arrays.stream(values).forEach(sketch);
-            assertEncodes(false, values, sketch);
+            test(false, values, sketch);
         }
         {
             final QS sketch = newSketch();
             Arrays.stream(values).boxed()
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .forEach(sketch::accept);
-            assertEncodes(false, values, sketch);
+            test(false, values, sketch);
         }
     }
 
@@ -133,7 +137,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
                 Arrays.stream(sketchValues).forEach(intermediateSketch);
                 sketch.mergeWith(intermediateSketch);
             });
-            assertEncodes(true, Arrays.stream(values).flatMapToDouble(Arrays::stream).toArray(), sketch);
+            test(true, Arrays.stream(values).flatMapToDouble(Arrays::stream).toArray(), sketch);
         }
         {
             final QS sketch = newSketch();
@@ -144,7 +148,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
                     .forEach(intermediateSketch::accept);
                 sketch.mergeWith(intermediateSketch);
             });
-            assertEncodes(true, Arrays.stream(values).flatMapToDouble(Arrays::stream).toArray(), sketch);
+            test(true, Arrays.stream(values).flatMapToDouble(Arrays::stream).toArray(), sketch);
         }
     }
 
@@ -296,6 +300,6 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
         final QS sketch = newSketch();
         Arrays.stream(values).forEach(sketch);
         final QS copy = sketch.copy();
-        assertEncodes(false, values, copy);
+        test(false, values, copy);
     }
 }

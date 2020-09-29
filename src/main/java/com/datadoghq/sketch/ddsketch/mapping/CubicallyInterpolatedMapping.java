@@ -58,4 +58,9 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
     double correctingFactor() {
         return 7 / (10 * Math.log(2));
     }
+
+    @Override
+    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.CUBIC;
+    }
 }

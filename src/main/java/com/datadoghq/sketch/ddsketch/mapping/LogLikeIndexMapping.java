@@ -119,4 +119,32 @@ abstract class LogLikeIndexMapping implements IndexMapping {
     public int hashCode() {
         return Objects.hash(multiplier, normalizedIndexOffset);
     }
+
+    abstract com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto();
+
+    @Override
+    public com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
+                .setGamma(Math.pow(base(), 1 / multiplier))
+                .setIndexOffset(normalizedIndexOffset + log(1) * multiplier)
+                .setInterpolation(interpolationToProto())
+                .build();
+    }
+
+    static LogLikeIndexMapping fromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping proto) {
+        final double gamma = proto.getGamma();
+        final double indexOffset = proto.getIndexOffset();
+        switch (proto.getInterpolation()) {
+            case NONE:
+                return new LogarithmicMapping(gamma, indexOffset);
+            case LINEAR:
+                return new LinearlyInterpolatedMapping(gamma, indexOffset);
+            case QUADRATIC:
+                return new QuadraticallyInterpolatedMapping(gamma, indexOffset);
+            case CUBIC:
+                return new CubicallyInterpolatedMapping(gamma, indexOffset);
+            default:
+                throw new IllegalArgumentException("unrecognized interpolation");
+        }
+    }
 }

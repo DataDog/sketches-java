@@ -5,10 +5,28 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import com.datadoghq.sketch.util.accuracy.AccuracyTester;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class BitwiseLinearlyInterpolatedMappingTest extends IndexMappingTest {
 
     @Override
-    IndexMapping getMapping(double relativeAccuracy) {
+    BitwiseLinearlyInterpolatedMapping getMapping(double relativeAccuracy) {
         return new BitwiseLinearlyInterpolatedMapping(relativeAccuracy);
+    }
+
+    @Test
+    @Override
+    void testProtoRoundTrip() {
+        final BitwiseLinearlyInterpolatedMapping mapping = getMapping(1e-2);
+        final IndexMapping roundTripMapping = IndexMapping.fromProto(mapping.toProto());
+        final IndexMapping expectedMapping = new LinearlyInterpolatedMapping(mapping.relativeAccuracy());
+        assertEquals(expectedMapping.getClass(), roundTripMapping.getClass());
+        assertEquals(expectedMapping.relativeAccuracy(), roundTripMapping.relativeAccuracy(),
+            AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+        assertEquals(expectedMapping.value(0), roundTripMapping.value(0),
+            AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
     }
 }

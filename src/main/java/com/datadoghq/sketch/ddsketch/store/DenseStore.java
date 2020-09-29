@@ -284,4 +284,18 @@ public abstract class DenseStore implements Store {
             }
         };
     }
+
+    @Override
+    public com.datadoghq.sketch.ddsketch.proto.Store toProto() {
+        final com.datadoghq.sketch.ddsketch.proto.Store.Builder builder =
+            com.datadoghq.sketch.ddsketch.proto.Store.newBuilder();
+        if (counts != null) {
+            // For the dense store, we use the dense representation to encode the bin counts.
+            builder.setContiguousBinIndexOffset(minIndex);
+            for (long index = minIndex; index <= maxIndex; index++) {
+                builder.addContiguousBinCounts(counts[(int) index - offset]);
+            }
+        }
+        return builder.build();
+    }
 }

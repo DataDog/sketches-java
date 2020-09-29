@@ -15,6 +15,8 @@ import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+
+import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import org.junit.jupiter.api.Test;
 
 abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
@@ -49,7 +51,8 @@ abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
                 upperQuantileValue * (1 + relativeAccuracy()) :
                 upperQuantileValue * (1 - relativeAccuracy());
 
-        if (actualQuantileValue < minExpected || actualQuantileValue > maxExpected) {
+        if (actualQuantileValue < minExpected - AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR ||
+            actualQuantileValue > maxExpected + AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR) {
             fail();
         }
     }
@@ -142,6 +145,16 @@ abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
                 IntStream.range(0, 100).mapToDouble(i -> -Math.exp(-i)),
                 IntStream.range(0, 100).mapToDouble(i -> Math.exp(-i))
         ).toArray());
+    }
+
+    @Override
+    protected void test(boolean merged, double[] values, SignedDDSketch sketch) {
+        assertEncodes(merged, values, sketch);
+        testProtoRoundTrip(merged, values, sketch);
+    }
+
+    void testProtoRoundTrip(boolean merged, double[] values, SignedDDSketch sketch) {
+        assertEncodes(merged, values, SignedDDSketch.fromProto(storeSupplier(), sketch.toProto()));
     }
 
     static class SignedDDSketchTest1 extends SignedDDSketchTest {

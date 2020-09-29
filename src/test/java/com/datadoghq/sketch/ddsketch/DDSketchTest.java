@@ -5,16 +5,18 @@
 
 package com.datadoghq.sketch.ddsketch;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import com.datadoghq.sketch.QuantileSketchTest;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
-import java.util.function.Supplier;
+import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import org.junit.jupiter.api.Test;
+
+import java.util.function.Supplier;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
 
@@ -50,7 +52,8 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
         final double minExpected = lowerQuantileValue * (1 - relativeAccuracy());
         final double maxExpected = upperQuantileValue * (1 + relativeAccuracy());
 
-        if (actualQuantileValue < minExpected || actualQuantileValue > maxExpected) {
+        if (actualQuantileValue < minExpected - AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR ||
+            actualQuantileValue > maxExpected + AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR) {
             fail();
         }
     }
@@ -67,6 +70,24 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
             IllegalArgumentException.class,
             () -> sketch.accept(-1)
         );
+    }
+
+    @Override
+    protected void test(boolean merged, double[] values, DDSketch sketch) {
+        assertEncodes(merged, values, sketch);
+        testProtoRoundTrip(merged, values, sketch);
+    }
+
+    void testProtoRoundTrip(boolean merged, double[] values, DDSketch sketch) {
+        assertEncodes(merged, values, DDSketch.fromProto(storeSupplier(), sketch.toProto()));
+    }
+
+    @Test
+    void testNegativeValueThrowsIllegalArgumentException() {
+        final SignedDDSketch sketch = new SignedDDSketch(mapping(), storeSupplier());
+        sketch.accept(-1);
+        final com.datadoghq.sketch.ddsketch.proto.DDSketch proto = sketch.toProto();
+        assertThrows(IllegalArgumentException.class, () -> DDSketch.fromProto(storeSupplier(), proto));
     }
 
     static class DDSketchTest1 extends DDSketchTest {
