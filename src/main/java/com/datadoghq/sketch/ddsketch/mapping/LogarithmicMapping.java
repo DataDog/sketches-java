@@ -42,4 +42,9 @@ public class LogarithmicMapping extends LogLikeIndexMapping {
     double correctingFactor() {
         return 1;
     }
+
+    @Override
+    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.NONE;
+    }
 }

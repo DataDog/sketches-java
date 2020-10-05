@@ -8,6 +8,7 @@ package com.datadoghq.sketch.ddsketch.store;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterators;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -144,4 +145,38 @@ public interface Store {
      */
     // Needed because of JDK-8194952
     Iterator<Bin> getDescendingIterator();
+
+    /**
+     * Generates a protobuf representation of this {@code Store}.
+     *
+     * @return a protobuf representation of this {@code Store}
+     */
+    default com.datadoghq.sketch.ddsketch.proto.Store toProto() {
+        final com.datadoghq.sketch.ddsketch.proto.Store.Builder storeBuilder =
+            com.datadoghq.sketch.ddsketch.proto.Store.newBuilder();
+        // In the general case, we use the sparse representation to encode bin counts.
+        getStream().forEach(bin -> storeBuilder.putBinCounts(bin.getIndex(), bin.getCount()));
+        return storeBuilder.build();
+    }
+
+    /**
+     * Builds a new instance of {@code Store} based on the provided protobuf representation.
+     *
+     * @param storeSupplier the constructor of the {@link Store} of type {@code S} implementation
+     * @param proto         the protobuf representation of a {@code Store}
+     * @param <S>           the type of the {@code Store} to build
+     * @return an instance of {@code Store} of type {@code S} that matches the protobuf representation
+     */
+    static <S extends Store> S fromProto(
+        Supplier<? extends S> storeSupplier,
+        com.datadoghq.sketch.ddsketch.proto.Store proto
+    ) {
+        final S store = storeSupplier.get();
+        proto.getBinCountsMap().forEach(store::add);
+        int index = proto.getContiguousBinIndexOffset();
+        for (final double count : proto.getContiguousBinCountsList()) {
+            store.add(index++, count);
+        }
+        return store;
+    }
 }

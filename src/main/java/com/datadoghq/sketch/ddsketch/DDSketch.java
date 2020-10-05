@@ -58,6 +58,18 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     private final Store store;
     private double zeroCount;
 
+    private DDSketch(IndexMapping indexMapping, Store store, double zeroCount, double minIndexedValue) {
+        this.indexMapping = indexMapping;
+        this.minIndexedValue = Math.max(minIndexedValue, indexMapping.minIndexableValue());
+        this.maxIndexedValue = indexMapping.maxIndexableValue();
+        this.store = store;
+        this.zeroCount = zeroCount;
+    }
+
+    private DDSketch(IndexMapping indexMapping, Store store, double zeroCount) {
+        this(indexMapping, store, zeroCount, 0);
+    }
+
     /**
      * Constructs an initially empty quantile sketch using the specified {@link IndexMapping} and {@link Store}
      * supplier.
@@ -96,11 +108,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      * @see #memoryOptimalCollapsingHighest
      */
     public DDSketch(IndexMapping indexMapping, Supplier<Store> storeSupplier, double minIndexedValue) {
-        this.indexMapping = indexMapping;
-        this.minIndexedValue = Math.max(minIndexedValue, indexMapping.minIndexableValue());
-        this.maxIndexedValue = indexMapping.maxIndexableValue();
-        this.store = storeSupplier.get();
-        this.zeroCount = 0;
+        this(indexMapping, storeSupplier.get(), 0, minIndexedValue);
     }
 
     private DDSketch(DDSketch sketch) {
@@ -274,6 +282,49 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         }
 
         return indexMapping.value(bin.getIndex());
+    }
+
+    /**
+     * Generates a protobuf representation of this {@code DDSketch}.
+     *
+     * @return a protobuf representation of this {@code DDSketch}
+     */
+    public com.datadoghq.sketch.ddsketch.proto.DDSketch toProto() {
+        return com.datadoghq.sketch.ddsketch.proto.DDSketch.newBuilder()
+            .setPositiveValues(store.toProto())
+            .setZeroCount(zeroCount)
+            .setMapping(indexMapping.toProto())
+            .build();
+    }
+
+    /**
+     * Builds a new instance of {@code DDSketch} based on the provided protobuf representation, assuming it encodes
+     * non-negative values only.
+     *
+     * @param storeSupplier the constructor of the {@link Store} implementation to be used for encoding bin counters
+     * @param proto         the protobuf representation of a sketch
+     * @return an instance of {@code DDSketch} that matches the protobuf representation
+     * @throws IllegalArgumentException if the protobuf representation contains negative values
+     */
+    public static DDSketch fromProto(
+        Supplier<? extends Store> storeSupplier,
+        com.datadoghq.sketch.ddsketch.proto.DDSketch proto
+    ) {
+        if (!isEmpty(proto.getNegativeValues())) {
+            throw new IllegalArgumentException(
+                "Cannot encode a sketch that contains negative values with DDSketch; use SignedDDSketch instead."
+            );
+        }
+        return new DDSketch(
+            IndexMapping.fromProto(proto.getMapping()),
+            Store.fromProto(storeSupplier, proto.getPositiveValues()),
+            proto.getZeroCount()
+        );
+    }
+
+    private static boolean isEmpty(com.datadoghq.sketch.ddsketch.proto.Store proto) {
+        return proto.getBinCountsMap().values().stream().allMatch(count -> count == 0.0) &&
+            proto.getContiguousBinCountsList().stream().allMatch(count -> count == 0.0);
     }
 
     // Preset sketches

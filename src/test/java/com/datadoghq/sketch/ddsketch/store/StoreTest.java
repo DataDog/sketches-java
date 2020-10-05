@@ -49,8 +49,11 @@ abstract class StoreTest {
         }
     }
 
-    private void assertEncodes(Bin[] bins, Store store) {
-        assertEncodes(getNonZeroCounts(getCounts(bins)), store);
+    private void test(Bin[] bins, Store store) {
+        final Map<Integer, Double> expectedNonZeroCounts = getNonZeroCounts(getCounts(bins));
+        assertEncodes(expectedNonZeroCounts, store);
+        // Test protobuf round-trip
+        assertEncodes(expectedNonZeroCounts, Store.fromProto(this::newStore, store.toProto()));
     }
 
     private static void assertEncodes(Map<Integer, Double> expectedCounts, Store store) {
@@ -89,7 +92,7 @@ abstract class StoreTest {
     void testAdding(int... values) {
         final Store store = newStore();
         Arrays.stream(values).forEach(store::add);
-        assertEncodes(toBins(values), store);
+        test(toBins(values), store);
 
         testAdding(toBins(values));
     }
@@ -98,12 +101,12 @@ abstract class StoreTest {
         {
             final Store store = newStore();
             Arrays.stream(bins).forEach(store::add);
-            assertEncodes(bins, store);
+            test(bins, store);
         }
         {
             final Store store = newStore();
             Arrays.stream(bins).forEach(bin -> store.add(bin.getIndex(), bin.getCount()));
-            assertEncodes(bins, store);
+            test(bins, store);
         }
     }
 
@@ -114,7 +117,7 @@ abstract class StoreTest {
             Arrays.stream(storeValues).forEach(intermediateStore::add);
             store.mergeWith(intermediateStore);
         });
-        assertEncodes(
+        test(
             Arrays.stream(values)
                 .map(Arrays::stream)
                 .flatMap(IntStream::boxed)
@@ -139,7 +142,7 @@ abstract class StoreTest {
                 Arrays.stream(storeBins).forEach(intermediateStore::add);
                 store.mergeWith(intermediateStore);
             });
-            assertEncodes(Arrays.stream(bins).flatMap(Arrays::stream).toArray(Bin[]::new), store);
+            test(Arrays.stream(bins).flatMap(Arrays::stream).toArray(Bin[]::new), store);
         }
         {
             final Store store = newStore();
@@ -148,7 +151,7 @@ abstract class StoreTest {
                 Arrays.stream(storeBins).forEach(bin -> intermediateStore.add(bin.getIndex(), bin.getCount()));
                 store.mergeWith(intermediateStore);
             });
-            assertEncodes(Arrays.stream(bins).flatMap(Arrays::stream).toArray(Bin[]::new), store);
+            test(Arrays.stream(bins).flatMap(Arrays::stream).toArray(Bin[]::new), store);
         }
     }
 
@@ -262,6 +265,6 @@ abstract class StoreTest {
         final Store store = newStore();
         Arrays.stream(bins).forEach(store::add);
         final Store copy = store.copy();
-        assertEncodes(bins, copy);
+        test(bins, copy);
     }
 }

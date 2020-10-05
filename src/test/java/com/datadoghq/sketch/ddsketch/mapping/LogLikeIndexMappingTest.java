@@ -5,8 +5,10 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 abstract class LogLikeIndexMappingTest extends IndexMappingTest {
@@ -38,6 +40,18 @@ abstract class LogLikeIndexMappingTest extends IndexMappingTest {
                 testOffset(getMapping(gamma, indexOffset), indexOffset);
             }
         }
+    }
+
+    @Test
+    @Override
+    void testProtoRoundTrip() {
+        final LogLikeIndexMapping mapping = getMapping(1e-2);
+        final LogLikeIndexMapping roundTripMapping = LogLikeIndexMapping.fromProto(mapping.toProto());
+        assertEquals(mapping.getClass(), roundTripMapping.getClass());
+        assertEquals(mapping.relativeAccuracy(), roundTripMapping.relativeAccuracy(),
+            AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+        assertEquals(mapping.value(0), roundTripMapping.value(0),
+            AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
     }
 
     private void testOffset(LogLikeIndexMapping mapping, double indexOffset) {

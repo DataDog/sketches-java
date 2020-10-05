@@ -73,4 +73,21 @@ public interface IndexMapping {
     double minIndexableValue();
 
     double maxIndexableValue();
+
+    /**
+     * Generates a protobuf representation of this {@code IndexMapping}.
+     *
+     * @return a protobuf representation of this {@code IndexMapping}
+     */
+    com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto();
+
+    /**
+     * Returns an instance of {@code IndexMapping} that matches the provided protobuf representation.
+     *
+     * @param proto the protobuf representation of an {@code IndexMapping}
+     * @return an instance of {@code IndexMapping} that matches the protobuf representation
+     */
+    static IndexMapping fromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping proto) {
+        return LogLikeIndexMapping.fromProto(proto);
+    }
 }

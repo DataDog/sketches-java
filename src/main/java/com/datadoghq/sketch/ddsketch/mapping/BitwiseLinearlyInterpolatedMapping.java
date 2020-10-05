@@ -34,7 +34,7 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
         this.numSignificantBinaryDigits = numSignificantBinaryDigits;
         this.partialSignificandShift = DoubleBitOperationHelper.SIGNIFICAND_WIDTH - numSignificantBinaryDigits - 1;
         this.multiplier = 1 << numSignificantBinaryDigits;
-        this.relativeAccuracy = 1 - 1 / (1 + Math.pow(2, -(numSignificantBinaryDigits + 1)));
+        this.relativeAccuracy = 1 - 2 / (1 + Math.exp(1.0 / this.multiplier));
     }
 
     /**
@@ -45,7 +45,8 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
         if (relativeAccuracy <= 0 || relativeAccuracy >= 1) {
             throw new IllegalArgumentException("The relative accuracy must be between 0 and 1.");
         }
-        return Math.max((int) Math.ceil(Math.log(1 / relativeAccuracy - 1) / Math.log(2) - 1), 0);
+        final double multiplier = 1 / Math.log(2 / (1 - relativeAccuracy) - 1);
+        return Math.max((int) Math.ceil(Math.log(multiplier) / Math.log(2)), 0);
     }
 
     @Override
@@ -103,5 +104,14 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     @Override
     public int hashCode() {
         return Objects.hash(numSignificantBinaryDigits);
+    }
+
+    @Override
+    public com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto() {
+        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
+            .setGamma(Math.pow(2, 1.0 / multiplier))
+            .setIndexOffset(multiplier)
+            .setInterpolation(com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.LINEAR)
+            .build();
     }
 }
