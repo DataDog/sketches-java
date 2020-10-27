@@ -9,6 +9,54 @@ package com.datadoghq.sketch.ddsketch.mapping;
  * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link LogarithmicMapping}) by
  * extracting the floor value of the logarithm to the base 2 from the binary representations of floating-point values
  * and cubically interpolating the logarithm in-between.
+ * <p>
+ * Calculating the bucket index with this mapping is much faster than computing the logarithm of the value (by a factor
+ * of 3 according to some benchmarks, although it depends on various factors), and this mapping incurs a memory usage
+ * overhead of only 1% compared to the memory-optimal {@link LogarithmicMapping}, under the relative accuracy condition.
+ * In comparison, the overheads for {@link LinearlyInterpolatedMapping} and {@link QuadraticallyInterpolatedMapping} are
+ * respectively 44% and 8%.
+ * <p>
+ * Here are a few words about how to calculate the optimal polynomial coefficients.
+ * <p>
+ * The idea is that the exponent of the floating-point representation gives the floor value of the logarithm to base
+ * \(2\) of the input value for free. However, we want the logarithm to base \(\gamma = \frac{1+\alpha}{1-\alpha}\),
+ * where \(\alpha\) is the relative accuracy of the sketch. We can deduce that from the logarithm to the base \(2\), but
+ * that requires more than the floor value to base \(2\), and we need to actually approximate the logarithm between
+ * successive powers of \(2\). A way to do that relatively cheaply is to use the significand and to compute operations
+ * that are cheap for the CPU such as additions and multiplications. Therefore, writing \(x = 2^e(1+s)\), where \(e\) is
+ * an integer and \(0 \leq s \lt 1\), we compute the index as (the floor value of) \(I_{\alpha} =
+ * m\frac{\log2}{\log\gamma}(e+P(s))\), where \(P\) is a polynomial (of degree 3 here) and \(m\) is a multiplier
+ * (\(\geq1\)) that is large enough to ensure the \(\alpha\)-accuracy of the sketch.
+ * <p>
+ * We want that multiplier \(m\) to be as low as possible, because the higher \(m\), the smaller the buckets and the
+ * more buckets we need to cover the same range of values (hence the larger sketch memory size). But we still need the
+ * buckets to be small enough so that values that are distinct by a multiplying factor equal to \(\gamma\) do not end up
+ * in the same bucket (otherwise, the sketch cannot be \(\alpha\)-accurate). That is, we want \(I_{\alpha}(\gamma x) -
+ * I_{\alpha}(x) \geq 1\), for any \(\alpha\) and its corresponding \(\gamma\) (\(\leq -1\) would work as well). Writing
+ * \(f(x) = e + P(s)\), we can show that that condition amounts to \(f\) increasing and \(m \log 2 (f \circ \exp)'\)
+ * where \(f\) is differentiable (that is not necessarily the case at powers of \(2\)). Therefore, to achieve the best
+ * sketch memory efficiency, we need to maximize the infimum of \((f \circ \exp)'\).
+ * <p>
+ * Given that \(f(2y) = f(y) + 1\), we know that \((f \circ \exp)'(y + \log 2) = (f \circ \exp)'(y)\), and it is enough
+ * to study image between \(1\) and \(\log 2\), that is, with image, for \(e\) equal to \(0\) and \(s\) between \(0\)
+ * and \(1\). In other words, we want to find \(P\) that maximizes \(\inf_{y \in [1,\log 2[}(P \circ \exp)'(y)\), which
+ * is equal to \(\inf_{s \in [0,1[}P'(s)(1 + s)\).
+ * <p>
+ * \(f\) is increasing and, it does not have discontinuity points (that would be an underefficient mapping), therefore
+ * we can require \(P(0) = 0\) and \(P(1) = 1\). Hence, we can write \(P(s) = s+s(1-s)(u+vs)\) and we end up with only
+ * two coefficients \((u,v)\) to optimize. To find the coefficients that maximize the infimum, we can study the
+ * variations of \(Q(s) = P'(s)(1+s)\), which is a polynomial of degree \(3\), depending of values of \(u\) and \(v\).
+ * We can show that the infimum is maximized if \(u\) and \(v\) are such that the infimum is equal to \(Q(0)\) and
+ * \(Q(r)\), where \(r\) is one of the critical point (local minimum) of \(Q\), distinct from \(0\). That gives a
+ * quadratic equation in the two variables \(u\) and \(v\), and given that \(Q(0) = 1+u\), we take the solution that
+ * maximizes \(u\). Finally, we get \(u = 3/7\) and \(v = -6/35\), or alternatively, \(A\), \(B\) and \(C\) as in the
+ * code if we write \(P(s) = As^3+Bs^2+Cs\). You can convince yourself that those are the optimal coefficients by moving
+ * the red point on  <a href="https://www.desmos.com/calculator/zqcpw4454k">that graph</a>.
+ * <p>
+ * With those values, we can choose \(m\) as small as \(\frac{7}{10\log 2}\), which is about \(1.01\), hence the memory
+ * usage overhead of \(1\%\). For the reverse mapping (getting the value back from the index), implemented as the {@link
+ * #value} method, we need to solve a cubic equation, which we can done using
+ * <a href="https://en.wikipedia.org/wiki/Cubic_equation#General_cubic_formula">Cardano's formula</a>.
  */
 public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
 

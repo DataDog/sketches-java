@@ -24,12 +24,19 @@ version = '0.3.1-SNAPSHOT'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
+javadoc {
+    options.header = '<script type="text/javascript" id="MathJax-script" async' +
+            '  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">' +
+            '</script>'
+    options.addBooleanOption('-allow-script-in-comments', true)
+}
+
 task sourcesJar(type: Jar) {
     archiveClassifier = 'sources'
     from sourceSets.main.allJava
 }
 
-task javadocJar(type: Jar) {
+task javadocJar(type: Jar, dependsOn: javadoc) {
     archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
