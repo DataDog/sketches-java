@@ -20,23 +20,22 @@ package com.datadoghq.sketch.ddsketch.mapping;
  * <p>
  * The idea is that the exponent of the floating-point representation gives the floor value of the logarithm to base
  * \(2\) of the input value for free. However, we want the logarithm to base \(\gamma = \frac{1+\alpha}{1-\alpha}\),
- * where \(\alpha\) is the relative accuracy of the sketch. We can of course deduce that from the logarithm to the base
- * \(2\), but that requires more than the floor value to base \(2\), and we need to actually approximate the logarithm
- * between successive powers of \(2\). A way to do that relatively cheaply is to use the significand and to compute
- * operations that are cheap for the CPU such as additions and multiplications. Therefore, writing \(x = 2^e(1+s)\),
- * where \(e\) is an integer and \(s\) is between \(0\) (included) and \(1\) (excluded), we compute the index as (the
- * floor value of) \(I_{\alpha} = m\frac{\log2}{\log\gamma}(e+P(s))\), where \(P\) is a polynomial (of degree 3 here)
- * and \(m\) is a multiplier (\(\geq1\)) that corrects for the fact that the polynomial does not geometrically pull
- * apart values from one another as well as the logarithm.
+ * where \(\alpha\) is the relative accuracy of the sketch. We can deduce that from the logarithm to the base \(2\), but
+ * that requires more than the floor value to base \(2\), and we need to actually approximate the logarithm between
+ * successive powers of \(2\). A way to do that relatively cheaply is to use the significand and to compute operations
+ * that are cheap for the CPU such as additions and multiplications. Therefore, writing \(x = 2^e(1+s)\), where \(e\) is
+ * an integer and \(0 \leq s \lt 1\), we compute the index as (the floor value of) \(I_{\alpha} =
+ * m\frac{\log2}{\log\gamma}(e+P(s))\), where \(P\) is a polynomial (of degree 3 here) and \(m\) is a multiplier
+ * (\(\geq1\)) that is large enough to ensure the \(\alpha\)-accuracy of the sketch.
  * <p>
- * It is clear that we want that multiplier to be as low as possible, because the higher \(m\), the smaller the buckets
- * and the more buckets we need to cover the same range of values (hence the larger sketch memory size). But we still
- * need the buckets to be small enough so that values that are distinct by a multiplying factor equal to \(\gamma\) do
- * not end up in the same bucket (otherwise, the sketch cannot be \(\alpha\)-accurate). That is, we want
- * \(I_{\alpha}(\gamma x) - I_{\alpha}(x) \geq 1\), for any \(\alpha\) and its corresponding \(\gamma\) (\(\leq -1\)
- * would work as well). Writing \(f(x) = e + P(s)\), we can show that that condition amounts to \(f\) increasing and \(m
- * \log 2 (f \circ \exp)'\) where \(f\) is differentiable (that is not necessarily the case at powers of \(2\)).
- * Therefore, to achieve the best sketch memory efficiency, we need to maximize the infimum of \((f \circ \exp)'\).
+ * We want that multiplier \(m\) to be as low as possible, because the higher \(m\), the smaller the buckets and the
+ * more buckets we need to cover the same range of values (hence the larger sketch memory size). But we still need the
+ * buckets to be small enough so that values that are distinct by a multiplying factor equal to \(\gamma\) do not end up
+ * in the same bucket (otherwise, the sketch cannot be \(\alpha\)-accurate). That is, we want \(I_{\alpha}(\gamma x) -
+ * I_{\alpha}(x) \geq 1\), for any \(\alpha\) and its corresponding \(\gamma\) (\(\leq -1\) would work as well). Writing
+ * \(f(x) = e + P(s)\), we can show that that condition amounts to \(f\) increasing and \(m \log 2 (f \circ \exp)'\)
+ * where \(f\) is differentiable (that is not necessarily the case at powers of \(2\)). Therefore, to achieve the best
+ * sketch memory efficiency, we need to maximize the infimum of \((f \circ \exp)'\).
  * <p>
  * Given that \(f(2y) = f(y) + 1\), we know that \((f \circ \exp)'(y + \log 2) = (f \circ \exp)'(y)\), and it is enough
  * to study image between \(1\) and \(\log 2\), that is, with image, for \(e\) equal to \(0\) and \(s\) between \(0\)
