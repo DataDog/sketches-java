@@ -33,14 +33,14 @@ package com.datadoghq.sketch.ddsketch.mapping;
  * buckets to be small enough so that values that are distinct by a multiplying factor equal to \(\gamma\) do not end up
  * in the same bucket (otherwise, the sketch cannot be \(\alpha\)-accurate). That is, we want \(I_{\alpha}(\gamma x) -
  * I_{\alpha}(x) \geq 1\), for any \(\alpha\) and its corresponding \(\gamma\) (\(\leq -1\) would work as well). Writing
- * \(f(x) = e + P(s)\), we can show that that condition amounts to \(f\) increasing and \(m \log 2 (f \circ \exp)'\)
- * where \(f\) is differentiable (that is not necessarily the case at powers of \(2\)). Therefore, to achieve the best
- * sketch memory efficiency, we need to maximize the infimum of \((f \circ \exp)'\).
+ * \(f(x) = e + P(s)\), we can show that that condition amounts to \(f\) increasing and \(m \log 2 (f \circ \exp)' \geq
+ * 1\) where \(f\) is differentiable (that is not necessarily the case at powers of \(2\)). Therefore, to achieve the
+ * best sketch memory efficiency, we need to maximize the infimum of \((f \circ \exp)'\).
  * <p>
- * Given that \(f(2y) = f(y) + 1\), we know that \((f \circ \exp)'(y + \log 2) = (f \circ \exp)'(y)\), and it is enough
- * to study image between \(1\) and \(\log 2\), that is, with image, for \(e\) equal to \(0\) and \(s\) between \(0\)
- * and \(1\). In other words, we want to find \(P\) that maximizes \(\inf_{y \in [1,\log 2[}(P \circ \exp)'(y)\), which
- * is equal to \(\inf_{s \in [0,1[}P'(s)(1 + s)\).
+ * Given that \(f(2x) = f(x) + 1\), we know that \((f \circ \exp)'(y + \log 2) = (f \circ \exp)'(y)\), and it is enough
+ * to study \(f \circ \exp\) between \(0\) and \(\log 2\), that is, with \(\exp y = x = 2^e(1+s)\), for \(e\) equal to
+ * \(0\) and \(s\) between \(0\) and \(1\). In other words, we want to find \(P\) that maximizes \(\inf_{y \in [0,\log
+ * 2[}(P \circ \exp)'(y)\), which is equal to \(\inf_{s \in [0,1[}P'(s)(1 + s)\).
  * <p>
  * \(f\) is increasing and, it does not have discontinuity points (that would be an underefficient mapping), therefore
  * we can require \(P(0) = 0\) and \(P(1) = 1\). Hence, we can write \(P(s) = s+s(1-s)(u+vs)\) and we end up with only
