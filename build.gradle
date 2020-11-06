@@ -4,6 +4,7 @@ plugins {
     id 'signing'
     id 'com.google.protobuf' version '0.8.13'
     id 'idea'
+    id 'me.champeau.gradle.jmh' version '0.5.0'
 }
 
 repositories {
@@ -29,6 +30,11 @@ javadoc {
             '  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">' +
             '</script>'
     options.addBooleanOption('-allow-script-in-comments', true)
+}
+
+
+jmh {
+    jmhVersion = '1.26'
 }
 
 task sourcesJar(type: Jar) {
@@ -99,7 +105,6 @@ publishing {
             def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
             def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
             url = version.contains('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-
             credentials {
                 username ossrhUsername
                 password ossrhPassword
