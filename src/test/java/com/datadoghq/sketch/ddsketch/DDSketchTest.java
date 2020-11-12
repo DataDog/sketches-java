@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import org.junit.jupiter.api.Test;
 
-abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
+abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
 
     abstract double relativeAccuracy();
 
@@ -33,8 +33,8 @@ abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
 
 
     @Override
-    public SignedDDSketch newSketch() {
-        return new SignedDDSketch(mapping(), storeSupplier());
+    public DDSketch newSketch() {
+        return new DDSketch(mapping(), storeSupplier());
     }
 
     @Override
@@ -148,16 +148,16 @@ abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
     }
 
     @Override
-    protected void test(boolean merged, double[] values, SignedDDSketch sketch) {
+    protected void test(boolean merged, double[] values, DDSketch sketch) {
         assertEncodes(merged, values, sketch);
         testProtoRoundTrip(merged, values, sketch);
     }
 
-    void testProtoRoundTrip(boolean merged, double[] values, SignedDDSketch sketch) {
-        assertEncodes(merged, values, SignedDDSketch.fromProto(storeSupplier(), sketch.toProto()));
+    void testProtoRoundTrip(boolean merged, double[] values, DDSketch sketch) {
+        assertEncodes(merged, values, DDSketch.fromProto(storeSupplier(), sketch.toProto()));
     }
 
-    static class SignedDDSketchTest1 extends SignedDDSketchTest {
+    static class DDSketchTest1 extends DDSketchTest {
 
         @Override
         double relativeAccuracy() {
@@ -165,7 +165,7 @@ abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
         }
     }
 
-    static class SignedDDSketchTest2 extends SignedDDSketchTest {
+    static class DDSketchTest2 extends DDSketchTest {
 
         @Override
         double relativeAccuracy() {
@@ -173,12 +173,11 @@ abstract class SignedDDSketchTest extends QuantileSketchTest<SignedDDSketch> {
         }
     }
 
-    static class SignedDDSketchTest3 extends SignedDDSketchTest {
+    static class DDSketchTest3 extends DDSketchTest {
 
         @Override
         double relativeAccuracy() {
             return 1e-3;
         }
     }
-
 }

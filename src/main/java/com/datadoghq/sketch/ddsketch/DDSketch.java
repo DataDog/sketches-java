@@ -25,20 +25,19 @@ import java.util.function.Supplier;
  * A {@link QuantileSketch} with relative-error guarantees. This sketch computes quantile values with an approximation
  * error that is relative to the actual quantile value. It works with both positive and negative input values.
  * <p>
- * For instance, using {@code SignedDDSketch} with a relative accuracy guarantee set to 1%, if the expected quantile
- * value is 100, the computed quantile value is guaranteed to be between 99 and 101. If the expected quantile value is
- * 1000, the computed quantile value is guaranteed to be between 990 and 1010.
+ * For instance, using {@code DDSketch} with a relative accuracy guarantee set to 1%, if the expected quantile value is
+ * 100, the computed quantile value is guaranteed to be between 99 and 101. If the expected quantile value is 1000, the
+ * computed quantile value is guaranteed to be between 990 and 1010.
  * <p>
- * {@code SignedDDSketch} works by mapping floating-point input values to bins and counting the number of values for
- * each bin. The mapping to bins is handled by {@link IndexMapping}, while the underlying structure that keeps track of
- * bin counts is {@link Store}. {@link #memoryOptimal} constructs a sketch with a logarithmic index mapping, hence low
- * memory footprint, whereas {@link #fast} and {@link #balanced} offer faster ingestion speeds at the cost of larger
- * memory footprints. The size of the sketch can be upper-bounded by using collapsing stores. For instance, {@link
- * #memoryOptimalCollapsingLowest} is the version of {@code SignedDDSketch} described in the paper, and also implemented
- * in <a href="https://github.com/DataDog/sketches-go/">Go</a> and <a href="https://github.com/DataDog/sketches-py/">Python</a>.
+ * {@code DDSketch} works by mapping floating-point input values to bins and counting the number of values for each bin.
+ * The mapping to bins is handled by {@link IndexMapping}, while the underlying structure that keeps track of bin counts
+ * is {@link Store}. {@link #memoryOptimal} constructs a sketch with a logarithmic index mapping, hence low memory
+ * footprint, whereas {@link #fast} and {@link #balanced} offer faster ingestion speeds at the cost of larger memory
+ * footprints. The size of the sketch can be upper-bounded by using collapsing stores. For instance, {@link
+ * #memoryOptimalCollapsingLowest} is the version of {@code DDSketch} described in the paper, and also implemented in <a
+ * href="https://github.com/DataDog/sketches-go/">Go</a> and <a href="https://github.com/DataDog/sketches-py/">Python</a>.
  * It collapses lowest bins when the maximum number of buckets is reached. For using a specific {@link IndexMapping} or
- * a specific implementation of {@link Store}, the constructor can be used ({@link #SignedDDSketch(IndexMapping,
- * Supplier)}).
+ * a specific implementation of {@link Store}, the constructor can be used ({@link #DDSketch(IndexMapping, Supplier)}).
  * <p>
  * The memory size of the sketch depends on the range that is covered by the input values: the larger that range, the
  * more bins are needed to keep track of the input values. As a rough estimate, if working on durations using {@link
@@ -49,7 +48,7 @@ import java.util.function.Supplier;
  * <p>
  * Note that this implementation is not thread-safe.
  */
-public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
+public class DDSketch implements QuantileSketch<DDSketch> {
 
     private final IndexMapping indexMapping;
     private final double minIndexedValue;
@@ -59,7 +58,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     private final Store positiveValueStore;
     private double zeroCount;
 
-    private SignedDDSketch(
+    private DDSketch(
         IndexMapping indexMapping,
         Store negativeValueStore,
         Store positiveValueStore,
@@ -74,7 +73,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
         this.zeroCount = zeroCount;
     }
 
-    private SignedDDSketch(
+    private DDSketch(
         IndexMapping indexMapping,
         Store negativeValueStore,
         Store positiveValueStore,
@@ -90,7 +89,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
      * @param storeSupplier the store constructor for keeping track of added values
      */
-    public SignedDDSketch(IndexMapping indexMapping, Supplier<Store> storeSupplier) {
+    public DDSketch(IndexMapping indexMapping, Supplier<Store> storeSupplier) {
         this(indexMapping, storeSupplier, storeSupplier, 0);
     }
 
@@ -102,7 +101,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      * @param negativeValueStoreSupplier the store constructor for keeping track of added negative values
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      */
-    public SignedDDSketch(
+    public DDSketch(
         IndexMapping indexMapping,
         Supplier<Store> negativeValueStoreSupplier,
         Supplier<Store> positiveValueStoreSupplier
@@ -119,7 +118,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      * @param minIndexedValue the least value that should be distinguished from zero
      */
-    public SignedDDSketch(
+    public DDSketch(
         IndexMapping indexMapping,
         Supplier<Store> negativeValueStoreSupplier,
         Supplier<Store> positiveValueStoreSupplier,
@@ -128,7 +127,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
         this(indexMapping, negativeValueStoreSupplier.get(), positiveValueStoreSupplier.get(), 0, minIndexedValue);
     }
 
-    private SignedDDSketch(SignedDDSketch sketch) {
+    private DDSketch(DDSketch sketch) {
         this.indexMapping = sketch.indexMapping;
         this.minIndexedValue = sketch.minIndexedValue;
         this.maxIndexedValue = sketch.maxIndexedValue;
@@ -214,7 +213,7 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
      * @throws IllegalArgumentException if the other sketch does not use the same index mapping
      */
     @Override
-    public void mergeWith(SignedDDSketch other) {
+    public void mergeWith(DDSketch other) {
 
         if (!indexMapping.equals(other.indexMapping)) {
             throw new IllegalArgumentException(
@@ -228,8 +227,8 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     }
 
     @Override
-    public SignedDDSketch copy() {
-        return new SignedDDSketch(this);
+    public DDSketch copy() {
+        return new DDSketch(this);
     }
 
     @Override
@@ -315,9 +314,9 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     }
 
     /**
-     * Generates a protobuf representation of this {@code SignedDDSketch}.
+     * Generates a protobuf representation of this {@code DDSketch}.
      *
-     * @return a protobuf representation of this {@code SignedDDSketch}
+     * @return a protobuf representation of this {@code DDSketch}
      */
     public com.datadoghq.sketch.ddsketch.proto.DDSketch toProto() {
         return com.datadoghq.sketch.ddsketch.proto.DDSketch.newBuilder()
@@ -329,17 +328,17 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     }
 
     /**
-     * Builds a new instance of {@code SignedDDSketch} based on the provided protobuf representation.
+     * Builds a new instance of {@code DDSketch} based on the provided protobuf representation.
      *
      * @param storeSupplier the constructor of the {@link Store} implementation to be used for encoding bin counters
      * @param proto the protobuf representation of a sketch
-     * @return an instance of {@code SignedDDSketch} that matches the protobuf representation
+     * @return an instance of {@code DDSketch} that matches the protobuf representation
      */
-    public static SignedDDSketch fromProto(
+    public static DDSketch fromProto(
         Supplier<? extends Store> storeSupplier,
         com.datadoghq.sketch.ddsketch.proto.DDSketch proto
     ) {
-        return new SignedDDSketch(
+        return new DDSketch(
             IndexMapping.fromProto(proto.getMapping()),
             Store.fromProto(storeSupplier, proto.getNegativeValues()),
             Store.fromProto(storeSupplier, proto.getPositiveValues()),
@@ -350,137 +349,137 @@ public class SignedDDSketch implements QuantileSketch<SignedDDSketch> {
     // Preset sketches
 
     /**
-     * Constructs a balanced instance of {@code SignedDDSketch}, with high ingestion speed and low memory footprint.
+     * Constructs a balanced instance of {@code DDSketch}, with high ingestion speed and low memory footprint.
      *
      * @param relativeAccuracy the relative accuracy guaranteed by the sketch
-     * @return a balanced instance of {@code SignedDDSketch}
+     * @return a balanced instance of {@code DDSketch}
      */
-    public static SignedDDSketch balanced(double relativeAccuracy) {
-        return new SignedDDSketch(
+    public static DDSketch balanced(double relativeAccuracy) {
+        return new DDSketch(
             new CubicallyInterpolatedMapping(relativeAccuracy),
             UnboundedSizeDenseStore::new
         );
     }
 
     /**
-     * Constructs a balanced instance of {@code SignedDDSketch}, with high ingestion speed and low memory footprint,
-     * using a limited number of bins. When the maximum number of bins is reached, bins with lowest indices are
+     * Constructs a balanced instance of {@code DDSketch}, with high ingestion speed and low memory footprint, using a
+     * limited number of bins. When the maximum number of bins is reached, bins with lowest indices are collapsed, which
+     * causes the relative accuracy guarantee to be lost on lowest quantiles.
+     *
+     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
+     * @param maxNumBins the maximum number of bins to be maintained
+     * @return a balanced instance of {@code DDSketch} using a limited number of bins
+     */
+    public static DDSketch balancedCollapsingLowest(double relativeAccuracy, int maxNumBins) {
+        return new DDSketch(
+            new CubicallyInterpolatedMapping(relativeAccuracy),
+            () -> new CollapsingLowestDenseStore(maxNumBins)
+        );
+    }
+
+    /**
+     * Constructs a balanced instance of {@code DDSketch}, with high ingestion speed and low memory footprint,, using a
+     * limited number of bins. When the maximum number of bins is reached, bins with highest indices are collapsed,
+     * which causes the relative accuracy guarantee to be lost on highest quantiles.
+     *
+     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
+     * @param maxNumBins the maximum number of bins to be maintained
+     * @return a balanced instance of {@code DDSketch} using a limited number of bins
+     */
+    public static DDSketch balancedCollapsingHighest(double relativeAccuracy, int maxNumBins) {
+        return new DDSketch(
+            new CubicallyInterpolatedMapping(relativeAccuracy),
+            () -> new CollapsingHighestDenseStore(maxNumBins)
+        );
+    }
+
+    /**
+     * Constructs a fast instance of {@code DDSketch}, with optimized ingestion speed, at the cost of higher memory
+     * usage.
+     *
+     * @param relativeAccuracy the relative accuracy guaranteed by the sketch
+     * @return a fast instance of {@code DDSketch}
+     */
+    public static DDSketch fast(double relativeAccuracy) {
+        return new DDSketch(
+            new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
+            UnboundedSizeDenseStore::new
+        );
+    }
+
+    /**
+     * Constructs a fast instance of {@code DDSketch}, with optimized ingestion speed, at the cost of higher memory
+     * usage, using a limited number of bins. When the maximum number of bins is reached, bins with lowest indices are
      * collapsed, which causes the relative accuracy guarantee to be lost on lowest quantiles.
      *
      * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
      * @param maxNumBins the maximum number of bins to be maintained
-     * @return a balanced instance of {@code SignedDDSketch} using a limited number of bins
+     * @return a fast instance of {@code DDSketch} using a limited number of bins
      */
-    public static SignedDDSketch balancedCollapsingLowest(double relativeAccuracy, int maxNumBins) {
-        return new SignedDDSketch(
-            new CubicallyInterpolatedMapping(relativeAccuracy),
+    public static DDSketch fastCollapsingLowest(double relativeAccuracy, int maxNumBins) {
+        return new DDSketch(
+            new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
             () -> new CollapsingLowestDenseStore(maxNumBins)
         );
     }
 
     /**
-     * Constructs a balanced instance of {@code SignedDDSketch}, with high ingestion speed and low memory footprint,,
-     * using a limited number of bins. When the maximum number of bins is reached, bins with highest indices are
+     * Constructs a fast instance of {@code DDSketch}, with optimized ingestion speed, at the cost of higher memory
+     * usage, using a limited number of bins. When the maximum number of bins is reached, bins with highest indices are
      * collapsed, which causes the relative accuracy guarantee to be lost on highest quantiles.
      *
      * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
      * @param maxNumBins the maximum number of bins to be maintained
-     * @return a balanced instance of {@code SignedDDSketch} using a limited number of bins
+     * @return a fast instance of {@code DDSketch} using a limited number of bins
      */
-    public static SignedDDSketch balancedCollapsingHighest(double relativeAccuracy, int maxNumBins) {
-        return new SignedDDSketch(
-            new CubicallyInterpolatedMapping(relativeAccuracy),
-            () -> new CollapsingHighestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a fast instance of {@code SignedDDSketch}, with optimized ingestion speed, at the cost of higher
-     * memory usage.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch
-     * @return a fast instance of {@code SignedDDSketch}
-     */
-    public static SignedDDSketch fast(double relativeAccuracy) {
-        return new SignedDDSketch(
-            new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
-            UnboundedSizeDenseStore::new
-        );
-    }
-
-    /**
-     * Constructs a fast instance of {@code SignedDDSketch}, with optimized ingestion speed, at the cost of higher
-     * memory usage, using a limited number of bins. When the maximum number of bins is reached, bins with lowest
-     * indices are collapsed, which causes the relative accuracy guarantee to be lost on lowest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a fast instance of {@code SignedDDSketch} using a limited number of bins
-     */
-    public static SignedDDSketch fastCollapsingLowest(double relativeAccuracy, int maxNumBins) {
-        return new SignedDDSketch(
-            new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
-            () -> new CollapsingLowestDenseStore(maxNumBins)
-        );
-    }
-
-    /**
-     * Constructs a fast instance of {@code SignedDDSketch}, with optimized ingestion speed, at the cost of higher
-     * memory usage, using a limited number of bins. When the maximum number of bins is reached, bins with highest
-     * indices are collapsed, which causes the relative accuracy guarantee to be lost on highest quantiles.
-     *
-     * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
-     * @param maxNumBins the maximum number of bins to be maintained
-     * @return a fast instance of {@code SignedDDSketch} using a limited number of bins
-     */
-    public static SignedDDSketch fastCollapsingHighest(double relativeAccuracy, int maxNumBins) {
-        return new SignedDDSketch(
+    public static DDSketch fastCollapsingHighest(double relativeAccuracy, int maxNumBins) {
+        return new DDSketch(
             new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
             () -> new CollapsingHighestDenseStore(maxNumBins)
         );
     }
 
     /**
-     * Constructs a memory-optimal instance of {@code SignedDDSketch}, with optimized memory usage, at the cost of lower
+     * Constructs a memory-optimal instance of {@code DDSketch}, with optimized memory usage, at the cost of lower
      * ingestion speed.
      *
      * @param relativeAccuracy the relative accuracy guaranteed by the sketch
-     * @return a memory-optimal instance of {@code SignedDDSketch}
+     * @return a memory-optimal instance of {@code DDSketch}
      */
-    public static SignedDDSketch memoryOptimal(double relativeAccuracy) {
-        return new SignedDDSketch(
+    public static DDSketch memoryOptimal(double relativeAccuracy) {
+        return new DDSketch(
             new LogarithmicMapping(relativeAccuracy),
             UnboundedSizeDenseStore::new
         );
     }
 
     /**
-     * Constructs a memory-optimal instance of {@code SignedDDSketch}, with optimized memory usage, at the cost of lower
+     * Constructs a memory-optimal instance of {@code DDSketch}, with optimized memory usage, at the cost of lower
      * ingestion speed, using a limited number of bins. When the maximum number of bins is reached, bins with lowest
      * indices are collapsed, which causes the relative accuracy guarantee to be lost on lowest quantiles.
      *
      * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
      * @param maxNumBins the maximum number of bins to be maintained
-     * @return a memory-optimal instance of {@code SignedDDSketch} using a limited number of bins
+     * @return a memory-optimal instance of {@code DDSketch} using a limited number of bins
      */
-    public static SignedDDSketch memoryOptimalCollapsingLowest(double relativeAccuracy, int maxNumBins) {
-        return new SignedDDSketch(
+    public static DDSketch memoryOptimalCollapsingLowest(double relativeAccuracy, int maxNumBins) {
+        return new DDSketch(
             new LogarithmicMapping(relativeAccuracy),
             () -> new CollapsingLowestDenseStore(maxNumBins)
         );
     }
 
     /**
-     * Constructs a memory-optimal instance of {@code SignedDDSketch}, with optimized memory usage, at the cost of lower
+     * Constructs a memory-optimal instance of {@code DDSketch}, with optimized memory usage, at the cost of lower
      * ingestion speed, using a limited number of bins. When the maximum number of bins is reached, bins with highest
      * indices are collapsed, which causes the relative accuracy guarantee to be lost on highest quantiles.
      *
      * @param relativeAccuracy the relative accuracy guaranteed by the sketch (for non-collapsed bins)
      * @param maxNumBins the maximum number of bins to be maintained
-     * @return a memory-optimal instance of {@code SignedDDSketch} using a limited number of bins
+     * @return a memory-optimal instance of {@code DDSketch} using a limited number of bins
      */
-    public static SignedDDSketch memoryOptimalCollapsingHighest(double relativeAccuracy, int maxNumBins) {
-        return new SignedDDSketch(
+    public static DDSketch memoryOptimalCollapsingHighest(double relativeAccuracy, int maxNumBins) {
+        return new DDSketch(
             new LogarithmicMapping(relativeAccuracy),
             () -> new CollapsingHighestDenseStore(maxNumBins)
         );
