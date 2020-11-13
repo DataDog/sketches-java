@@ -45,7 +45,7 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
         if (relativeAccuracy <= 0 || relativeAccuracy >= 1) {
             throw new IllegalArgumentException("The relative accuracy must be between 0 and 1.");
         }
-        final double multiplier = 1 / Math.log(2 / (1 - relativeAccuracy) - 1);
+        final double multiplier = 1 / Math.log1p(2 * relativeAccuracy / (1 - relativeAccuracy));
         return Math.max((int) Math.ceil(Math.log(multiplier) / Math.log(2)), 0);
     }
 

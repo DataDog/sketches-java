@@ -26,7 +26,7 @@ abstract class LogLikeIndexMapping implements IndexMapping {
         }
         this.relativeAccuracy = relativeAccuracy;
         this.multiplier = correctingFactor() * Math.log(base())
-            / (Math.log((1 + relativeAccuracy) / (1 - relativeAccuracy)));
+            / (Math.log1p(2 * relativeAccuracy / (1 - relativeAccuracy)));
         this.normalizedIndexOffset = 0;
     }
 
@@ -41,8 +41,8 @@ abstract class LogLikeIndexMapping implements IndexMapping {
         if (gamma <= 1) {
             throw new IllegalArgumentException("gamma must be greater than 1.");
         }
-        this.relativeAccuracy = 1 - 2 / (1 + Math.exp(correctingFactor() * Math.log(gamma)));
-        this.multiplier = Math.log(base()) / Math.log(gamma);
+        this.relativeAccuracy = 1 - 2 / (1 + Math.exp(correctingFactor() * Math.log1p(gamma - 1)));
+        this.multiplier = Math.log(base()) / Math.log1p(gamma - 1);
         this.normalizedIndexOffset = indexOffset - log(1) * this.multiplier;
     }
 
