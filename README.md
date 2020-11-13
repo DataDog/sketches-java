@@ -11,7 +11,7 @@ The following code snippet shows the most basic features of `DDSketch`:
 ```java
 // Creating an initially empty sketch, with low memory footprint
 double relativeAccuracy = 0.01;
-DDSketch sketch = DDSketch.memoryOptimal(relativeAccuracy);
+DDSketch sketch = DDSketches.unboundedDense(relativeAccuracy);
 
 // Adding values to the sketch
 sketch.accept(3.2); // adds a single value
@@ -23,7 +23,7 @@ sketch.getMinValue();
 sketch.getMaxValue();
 
 // Merging another sketch into the sketch, in-place
-DDSketch anotherSketch = DDSketch.memoryOptimal(relativeAccuracy);
+DDSketch anotherSketch = DDSketch.unboundedDense(relativeAccuracy);
 DoubleStream.of(3.4, 7.6, 2.8).forEach(anotherSketch);
 sketch.mergeWith(anotherSketch);
 ```
@@ -34,13 +34,11 @@ DDSketch has relative error guarantees: it computes quantiles with a controlled 
 
 For instance, using `DDSketch` with a relative accuracy guarantee set to 1%, if the expected quantile value is 100, the computed quantile value is guaranteed to be between 99 and 101. If the expected quantile value is 1000, the computed quantile value is guaranteed to be between 990 and 1010.
 
-`DDSketch` works by mapping floating-point input values to bins and counting the number of values for each bin. The mapping to bins is handled by `IndexMapping`, while the underlying structure that keeps track of bin counts is `Store`. `DDSketch.memoryOptimal()` constructs a sketch with a logarithmic index mapping, hence low memory footprint, whereas `DDSketch.balanced()` and `DDSketch.fast()` offer faster ingestion speeds (respectively about 3 and 6 times faster) at the cost of larger memory footprints (respectively 1% and 44% larger for the same accuracy guarantee).
+`DDSketch` works by mapping floating-point input values to bins and counting the number of values for each bin. The mapping to bins is handled by `IndexMapping`, while the underlying structure that keeps track of bin counts is `Store`. `DDSketches.unboundedDense()` constructs a sketch whose bin counts are backed by an array, therefore offering constant-time insertion. The array is grown as necessary to accommodate for the range of input values.  
 
-The size of the sketch can be upper-bounded by using collapsing stores. For instance, `DDSketch.memoryOptimalCollapsingLowest()` is the version of `DDSketch` described in the paper, and also implemented in [Go](https://github.com/DataDog/sketches-go/) and [Python](https://github.com/DataDog/sketches-py/). It collapses lowest bins when the maximum number of buckets is reached. For using a specific `IndexMapping` or a specific implementation of `Store`, the constructor can be used.
+The size of the sketch can be upper-bounded by using collapsing stores. For instance, `DDSketches.logarithmicCollapsingLowestDense()` is the version of `DDSketch` described in the [DDSketch paper](http://www.vldb.org/pvldb/vol12/p2195-masson.pdf). It collapses lowest bins when the maximum number of buckets is reached. See the [`DDSketches`](src/main/java/com/datadoghq/sketch/ddsketch/DDSketches.java) for more preset sketches and more details.
 
-The memory size of the sketch depends on the range that is covered by the input values: the larger that range, the more bins are needed to keep track of the input values. As a rough estimate, if working on durations using `DDSketch.memoryOptimal(0.02)` (relative accuracy of 2%), about 2kB (275 bins) are needed to cover values between 1 millisecond and 1 minute, and about 6kB (802 bins) to cover values between 1 nanosecond and 1 day. The number of bins that are maintained can be upper-bounded using collapsing stores (see for example `DDSketch.memoryOptimalCollapsingLowest()` and `DDSketch.memoryOptimalCollapsingHighest()`).
-
-The library contains two versions of the sketch: `DDSketch` only handles non-negative values whereas `SignedDDSketch` handles both negative and positive values.
+The memory size of the sketch depends on the range that is covered by the input values: the larger that range, the more bins are needed to keep track of the input values. As a rough estimate, if working on durations using `DDSketches.unboundedDense(0.02)` (relative accuracy of 2%), about 2kB (275 bins) are needed to cover values between 1 millisecond and 1 minute, and about 6kB (802 bins) to cover values between 1 nanosecond and 1 day. The number of bins that are maintained can be upper-bounded using collapsing stores (see for example `DDSketches.collapsingLowestDense()` and `DDSketches.collapsingHighestDense()`).
 
 # GKArray
 
