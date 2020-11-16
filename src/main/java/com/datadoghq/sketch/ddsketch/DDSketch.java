@@ -79,6 +79,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      *
      * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
      * @param storeSupplier the store constructor for keeping track of added values
+     * @see DDSketches
      */
     public DDSketch(IndexMapping indexMapping, Supplier<Store> storeSupplier) {
         this(indexMapping, storeSupplier, storeSupplier, 0);
@@ -91,6 +92,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      * @param indexMapping the mapping between floating-point values and integer indices to be used by the sketch
      * @param negativeValueStoreSupplier the store constructor for keeping track of added negative values
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
+     * @see DDSketches
      */
     public DDSketch(
         IndexMapping indexMapping,
@@ -108,6 +110,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      * @param negativeValueStoreSupplier the store constructor for keeping track of added negative values
      * @param positiveValueStoreSupplier the store constructor for keeping track of added positive values
      * @param minIndexedValue the least value that should be distinguished from zero
+     * @see DDSketches
      */
     public DDSketch(
         IndexMapping indexMapping,
