@@ -83,6 +83,22 @@ public final class PaginatedStore implements Store {
     }
 
     @Override
+    public double getTotalCount() {
+        if (isEmpty()) {
+            return 0D;
+        }
+        double total = 0D;
+        for (double[] page : pages) {
+            if (null != page) {
+                for (double count : page) {
+                    total += count;
+                }
+            }
+        }
+        return total;
+    }
+
+    @Override
     public void add(int index, double count) {
         if (count > 0) {
             int alignedIndex = alignedIndex(index);
@@ -145,6 +161,84 @@ public final class PaginatedStore implements Store {
 
     private void extendTo(int pageIndex) {
         this.pages = Arrays.copyOf(pages, pages.length + aligned(pageIndex - minPageIndex + 1));
+    }
+
+    @Override
+    public void mergeWith(Store store) {
+        if (store.isEmpty()) {
+            return;
+        }
+        if (store instanceof PaginatedStore) {
+            mergeWith((PaginatedStore) store);
+        } else {
+            store.getStream().forEach(this::add);
+        }
+    }
+
+    private void mergeWith(PaginatedStore store) {
+        if (isEmpty()) {
+            this.pages = deepCopy(store.pages);
+            this.minPageIndex = store.minPageIndex;
+        } else {
+            int min = minPageIndex;
+            int max = minPageIndex + pages.length;
+            int storeMin = store.minPageIndex;
+            int storeMax = store.minPageIndex + store.pages.length;
+            if (max < storeMin) {
+                extendTo(storeMax);
+                for (int i = 0; i < store.pages.length; ++i) {
+                    double[] page = store.pages[i];
+                    if (null != page) {
+                        pages[i + storeMin - min] = Arrays.copyOf(page, page.length);
+                    }
+                }
+            } else if (min > storeMax) {
+                shiftPagesRight(storeMin);
+                for (int i = 0; i < store.pages.length; ++i) {
+                    double[] page = store.pages[i];
+                    if (null != page) {
+                        pages[i] = Arrays.copyOf(page, page.length);
+                    }
+                }
+            } else if (min < storeMin) {
+                if (storeMax > max) {
+                    extendTo(storeMax);
+                }
+                for (int i = 0; i < store.pages.length; ++i) {
+                    double[] page = store.pages[i];
+                    if (null != page) {
+                        double[] target = pages[i + storeMin - min];
+                        if (null == target) {
+                            pages[i + storeMin - min] = Arrays.copyOf(page, page.length);
+                        } else {
+                            for (int j = 0; j < page.length; ++j) {
+                                target[j] += page[j];
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (min > storeMin) {
+                    shiftPagesRight(storeMin);
+                }
+                if (storeMax > max) {
+                    extendTo(storeMax);
+                }
+                for (int i = 0; i < store.pages.length; ++i) {
+                    double[] page = store.pages[i];
+                    if (null != page) {
+                        double[] target = pages[i];
+                        if (null == target) {
+                            pages[i] = Arrays.copyOf(page, page.length);
+                        } else {
+                            for (int j = 0; j < page.length; ++j) {
+                                target[j] += page[j];
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override

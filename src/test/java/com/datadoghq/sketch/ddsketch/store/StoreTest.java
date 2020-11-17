@@ -219,6 +219,9 @@ abstract class StoreTest {
         testMerging(new int[]{ -10000 }, new int[]{ 10000 });
         testMerging(new int[]{ 10000 }, new int[]{ -10000 });
         testMerging(new int[]{ 10000 }, new int[]{ -10000 }, new int[]{ 0 });
+        testMerging(new int[]{ -10000, 10000 }, new int[]{ -5000, 5000 });
+        testMerging(new int[]{ -5000, 5000 }, new int[]{ -10000, 10000 });
+        testMerging(new int[]{ -5000, 10000 }, new int[]{ -10000, 5000 });
         testMerging(new int[]{ 10000, 0 }, new int[]{ -10000 }, new int[]{ 0 });
     }
 
