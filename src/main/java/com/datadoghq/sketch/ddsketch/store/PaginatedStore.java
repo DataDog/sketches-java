@@ -4,6 +4,22 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+/**
+ * This is an unbounded store which allocates storage for counts
+ * in aligned pages stored in an array at offsets modulo the page
+ * size. This means that if a distribution has several modes, the
+ * cost of the storage for the space in between the modes is that
+ * of a null pointer per page, requiring 4-8 bytes (depending on
+ * CompressedOops, whether ZGC is used, and heap size) for each
+ * 1KB page.
+ *
+ * On the contrary, if the data is uniformly distributed filling
+ * each page in a range [N, N + K * PAGE_SIZE) this store will
+ * require K * (20 + 4|8) extra space over
+ * {@code UnboundedSizeDenseStore}, because of the metadata
+ * overhead of the array headers and references to each page.
+ *
+ */
 public final class PaginatedStore implements Store {
 
     private static final int GROWTH = 8;
@@ -12,24 +28,24 @@ public final class PaginatedStore implements Store {
     private static final int PAGE_SHIFT = Integer.bitCount(PAGE_MASK);
 
     private double[][] pages = null;
-    private int pageOffset;
+    private int minPageIndex;
 
     public PaginatedStore() {
-        this(0);
+        this(Integer.MAX_VALUE);
     }
 
-    PaginatedStore(int pageOffset) {
-        this.pageOffset = pageOffset;
+    PaginatedStore(int minPageIndex) {
+        this.minPageIndex = minPageIndex;
     }
 
     PaginatedStore(PaginatedStore store) {
-        this(store.pageOffset);
+        this(store.minPageIndex);
         this.pages = deepCopy(store.pages);
     }
 
     @Override
     public boolean isEmpty() {
-        // won't initialise any pages unless until a value is added,
+        // won't initialise any pages until a value is added,
         // and values can't be removed.
         return null == pages;
     }
@@ -41,7 +57,7 @@ public final class PaginatedStore implements Store {
                 if (null != pages[i]) {
                     for (int j = 0; j < pages[i].length; ++j) {
                         if (pages[i][j] != 0D) {
-                            return ((i - pageOffset) << PAGE_SHIFT) + j;
+                            return ((i + minPageIndex) << PAGE_SHIFT) + j;
                         }
                     }
                 }
@@ -57,7 +73,7 @@ public final class PaginatedStore implements Store {
                 if (null != pages[i]) {
                     for (int j = pages[i].length - 1; j >= 0; --j) {
                         if (pages[i][j] != 0D) {
-                            return ((i - pageOffset) << PAGE_SHIFT) + j;
+                            return ((i + minPageIndex) << PAGE_SHIFT) + j;
                         }
                     }
                 }
@@ -84,26 +100,33 @@ public final class PaginatedStore implements Store {
     }
 
     private int alignedIndex(int index) {
+        // get the index of the page this value should be stored in
         int pageIndex = index < 0
-                ? -(-index >>> PAGE_SHIFT) - 1
+                ? ~(-index >>> PAGE_SHIFT)
                 : index >>> PAGE_SHIFT;
-        if (null == pages) {
-            lazyInit(pageIndex);
-        } else if (pageIndex + pageOffset < 0) {
-            growBelow(pageIndex);
-        } else if (pageIndex + pageOffset >= pages.length - 1) {
-            growAbove(pageIndex);
+        if (pageIndex < minPageIndex) {
+            // then space needs to be made before the first page,
+            // unless this is the first insertion
+            if (null == pages) {
+                lazyInit(pageIndex);
+            } else {
+                shiftPagesRight(pageIndex);
+            }
+        } else if (pageIndex >= minPageIndex + pages.length - 1) {
+            // then space needs to be made after the last page
+            extendTo(pageIndex);
         }
-        return index + (pageOffset << PAGE_SHIFT);
+        // align the index relative to the start of the sketch
+        return index + (-minPageIndex << PAGE_SHIFT);
     }
 
     private void lazyInit(int pageIndex) {
-        pageOffset = -pageIndex;
+        minPageIndex = pageIndex;
         pages = new double[GROWTH][];
     }
 
-    private void growBelow(int pageIndex) {
-        int requiredExtension = -pageOffset - pageIndex;
+    private void shiftPagesRight(int pageIndex) {
+        int requiredExtension = minPageIndex - pageIndex;
         // check if there is space to shift into
         boolean canShiftRight = true;
         for (int i = 0; i < requiredExtension && canShiftRight; ++i) {
@@ -112,16 +135,16 @@ public final class PaginatedStore implements Store {
         if (canShiftRight) {
             System.arraycopy(pages, 0, pages, requiredExtension, pages.length - requiredExtension);
         } else {
-            double[][] newPages = new double[pages.length + aligned(GROWTH, requiredExtension)][];
+            double[][] newPages = new double[pages.length + aligned(requiredExtension)][];
             System.arraycopy(pages, 0, newPages, requiredExtension, pages.length);
             this.pages = newPages;
         }
         Arrays.fill(pages, 0, requiredExtension, null);
-        this.pageOffset = -pageIndex;
+        this.minPageIndex = pageIndex;
     }
 
-    private void growAbove(int pageIndex) {
-        this.pages = Arrays.copyOf(pages, pages.length + aligned(GROWTH,pageIndex + 1 + pageOffset));
+    private void extendTo(int pageIndex) {
+        this.pages = Arrays.copyOf(pages, pages.length + aligned(pageIndex - minPageIndex + 1));
     }
 
     @Override
@@ -139,8 +162,8 @@ public final class PaginatedStore implements Store {
         return new DescendingIterator();
     }
 
-    private static int aligned(int alignment, int required) {
-        return (required + alignment - 1) & -alignment;
+    private static int aligned(int required) {
+        return (required + GROWTH - 1) & -GROWTH;
     }
 
     private static double[][] deepCopy(double[][] pages) {
@@ -185,7 +208,7 @@ public final class PaginatedStore implements Store {
         @Override
         public Bin next() {
             double value = next;
-            int index = ((pageIndex - pageOffset) << PAGE_SHIFT) + valueIndex;
+            int index = ((pageIndex + minPageIndex) << PAGE_SHIFT) + valueIndex;
             ++valueIndex;
             next = nextInPage();
             if (Double.isNaN(next)) {
@@ -241,7 +264,7 @@ public final class PaginatedStore implements Store {
         @Override
         public Bin next() {
             double value = previous;
-            int index = ((pageIndex - pageOffset) << PAGE_SHIFT) + valueIndex;
+            int index = ((pageIndex + minPageIndex) << PAGE_SHIFT) + valueIndex;
             --valueIndex;
             previous = previousInPage();
             if (Double.isNaN(previous)) {
