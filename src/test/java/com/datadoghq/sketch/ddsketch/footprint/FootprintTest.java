@@ -1,6 +1,8 @@
 package com.datadoghq.sketch.ddsketch.footprint;
 
 import com.datadoghq.sketch.ddsketch.DDSketch;
+import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.store.PaginatedStore;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -42,7 +44,9 @@ public class FootprintTest {
                         .composeWith(POISSON.of(0.99)),
                 POISSON.of(0.001)
                         .composeWith(POISSON.of(0.999))
-        ).flatMap(dist -> Stream.of(DDSketch::balanced, DDSketch::memoryOptimal, (DoubleFunction<DDSketch>) DDSketch::fast)
+        ).flatMap(dist -> Stream.of(DDSketch::balanced, DDSketch::memoryOptimal,
+                re -> new DDSketch(new BitwiseLinearlyInterpolatedMapping(re), PaginatedStore::new),
+                (DoubleFunction<DDSketch>) DDSketch::fast)
                 .flatMap(ctor -> Stream.of(NANOSECONDS, MICROSECONDS, MILLISECONDS)
                         .map(timeUnit -> Arguments.of(timeUnit, dist, ctor))));
     }
