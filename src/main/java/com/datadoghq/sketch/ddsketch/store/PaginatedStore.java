@@ -143,24 +143,27 @@ public final class PaginatedStore implements Store {
 
     private void shiftPagesRight(int pageIndex) {
         int requiredExtension = minPageIndex - pageIndex;
-        // check if there is space to shift into
-        boolean canShiftRight = true;
-        for (int i = 0; i < requiredExtension && canShiftRight; ++i) {
-            canShiftRight = null == pages[pages.length - i - 1];
+        if (requiredExtension > 0) {
+            // check if there is space to shift into
+            boolean canShiftRight = true;
+            // check if there are enough null slots at the end of the array to shift into
+            for (int i = 0; i < requiredExtension && canShiftRight && i < pages.length; ++i) {
+                canShiftRight = null == pages[pages.length - i - 1];
+            }
+            if (canShiftRight) {
+                System.arraycopy(pages, 0, pages, requiredExtension, pages.length - requiredExtension);
+            } else {
+                double[][] newPages = new double[pages.length + aligned(requiredExtension)][];
+                System.arraycopy(pages, 0, newPages, requiredExtension, pages.length);
+                this.pages = newPages;
+            }
+            Arrays.fill(pages, 0, requiredExtension, null);
+            this.minPageIndex = pageIndex;
         }
-        if (canShiftRight) {
-            System.arraycopy(pages, 0, pages, requiredExtension, pages.length - requiredExtension);
-        } else {
-            double[][] newPages = new double[pages.length + aligned(requiredExtension)][];
-            System.arraycopy(pages, 0, newPages, requiredExtension, pages.length);
-            this.pages = newPages;
-        }
-        Arrays.fill(pages, 0, requiredExtension, null);
-        this.minPageIndex = pageIndex;
     }
 
     private void extendTo(int pageIndex) {
-        this.pages = Arrays.copyOf(pages, pages.length + aligned(pageIndex - minPageIndex + 1));
+        this.pages = Arrays.copyOf(pages, aligned(pageIndex - minPageIndex + 2));
     }
 
     @Override
