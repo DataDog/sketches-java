@@ -8,6 +8,7 @@ package com.datadoghq.sketch.ddsketch;
 import com.datadoghq.sketch.QuantileSketch;
 import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
+import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.Bin;
 import com.datadoghq.sketch.ddsketch.store.CollapsingHighestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.CollapsingLowestDenseStore;
@@ -119,6 +120,20 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         double minIndexedValue
     ) {
         this(indexMapping, negativeValueStoreSupplier.get(), positiveValueStoreSupplier.get(), 0, minIndexedValue);
+    }
+
+    /**
+     * Constructs a simple instance of {@code DDSketch} with the provided relative accuracy guarantee.
+     * <p>
+     * This is a convenience constructor, mostly for testing purposes. For preset sketches that are well-suited to a
+     * production setting and to situations where performance and memory usage constraints are involved, see {@link
+     * DDSketches}.
+     *
+     * @param relativeAccuracy the relative accuracy guarantee of the constructed sketch
+     * @see DDSketches
+     */
+    public DDSketch(double relativeAccuracy) {
+        this(new LogarithmicMapping(relativeAccuracy), UnboundedSizeDenseStore::new);
     }
 
     private DDSketch(DDSketch sketch) {
