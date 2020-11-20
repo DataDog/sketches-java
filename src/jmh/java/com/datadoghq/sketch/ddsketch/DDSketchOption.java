@@ -1,11 +1,16 @@
 package com.datadoghq.sketch.ddsketch;
 
+import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.store.PaginatedStore;
+import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
+
 import java.util.function.DoubleFunction;
 
 public enum DDSketchOption {
-    FAST(DDSketch::fast),
-    MEMORY_OPTIMAL(DDSketch::memoryOptimal),
-    BALANCED(DDSketch::balanced);
+    FAST(relativeAccuracy -> new DDSketch(new BitwiseLinearlyInterpolatedMapping(relativeAccuracy), UnboundedSizeDenseStore::new)),
+    MEMORY_OPTIMAL(DDSketches::logarithmicUnboundedDense),
+    BALANCED(DDSketches::unboundedDense),
+    PAGINATED(relativeAccuracy -> new DDSketch(new BitwiseLinearlyInterpolatedMapping(relativeAccuracy), PaginatedStore::new));
 
     private final DoubleFunction<DDSketch> creator;
 
