@@ -5,11 +5,12 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import com.datadoghq.sketch.ddsketch.Serializer;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 abstract class LogLikeIndexMappingTest extends IndexMappingTest {
 
@@ -46,12 +47,22 @@ abstract class LogLikeIndexMappingTest extends IndexMappingTest {
     @Override
     void testProtoRoundTrip() {
         final LogLikeIndexMapping mapping = getMapping(1e-2);
-        final LogLikeIndexMapping roundTripMapping = LogLikeIndexMapping.fromProto(mapping.toProto());
+        assertSameAfterProtoRoundTrip(mapping, IndexMappingProtoBinding.fromProto(IndexMappingProtoBinding.toProto(mapping)));
+        Serializer serializer = new Serializer(mapping.serializedSize());
+        mapping.serialize(serializer);
+        try {
+            assertSameAfterProtoRoundTrip(mapping, IndexMappingProtoBinding.fromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping.parseFrom(serializer.getBuffer())));
+        } catch (InvalidProtocolBufferException e) {
+            fail(e);
+        }
+    }
+
+    private void assertSameAfterProtoRoundTrip(LogLikeIndexMapping mapping, IndexMapping roundTripMapping) {
         assertEquals(mapping.getClass(), roundTripMapping.getClass());
         assertEquals(mapping.relativeAccuracy(), roundTripMapping.relativeAccuracy(),
-            AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+                AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
         assertEquals(mapping.value(0), roundTripMapping.value(0),
-            AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+                AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
     }
 
     private void testOffset(LogLikeIndexMapping mapping, double indexOffset) {

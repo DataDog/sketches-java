@@ -13,7 +13,7 @@ class ProtoTest {
     @ParameterizedTest
     @MethodSource
     void testToProto(IndexMapping mapping, com.datadoghq.sketch.ddsketch.proto.IndexMapping proto) {
-        assertEquals(proto, mapping.toProto());
+        assertEquals(proto, IndexMappingProtoBinding.toProto(mapping));
     }
 
     static Stream<Arguments> testToProto() {
@@ -64,7 +64,7 @@ class ProtoTest {
     @ParameterizedTest
     @MethodSource
     void testFromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping proto, IndexMapping mapping) {
-        assertEquals(mapping, IndexMapping.fromProto(proto));
+        assertEquals(proto, IndexMappingProtoBinding.toProto(mapping));
     }
 
     static Stream<Arguments> testFromProto() {

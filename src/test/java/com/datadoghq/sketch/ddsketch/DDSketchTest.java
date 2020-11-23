@@ -12,11 +12,13 @@ import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
+
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.jupiter.api.Test;
 
 abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
@@ -150,11 +152,17 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     @Override
     protected void test(boolean merged, double[] values, DDSketch sketch) {
         assertEncodes(merged, values, sketch);
-        testProtoRoundTrip(merged, values, sketch);
+        try {
+            testProtoRoundTrip(merged, values, sketch);
+        } catch (InvalidProtocolBufferException e) {
+            fail(e);
+        }
     }
 
-    void testProtoRoundTrip(boolean merged, double[] values, DDSketch sketch) {
-        assertEncodes(merged, values, DDSketch.fromProto(storeSupplier(), sketch.toProto()));
+    void testProtoRoundTrip(boolean merged, double[] values, DDSketch sketch) throws InvalidProtocolBufferException {
+        assertEncodes(merged, values, DDSketchProtoBinding.fromProto(storeSupplier(), DDSketchProtoBinding.toProto(sketch)));
+        assertEncodes(merged, values, DDSketchProtoBinding.fromProto(storeSupplier(),
+                com.datadoghq.sketch.ddsketch.proto.DDSketch.parseFrom(sketch.serialize())));
     }
 
     static class DDSketchTest1 extends DDSketchTest {

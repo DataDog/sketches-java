@@ -5,7 +5,12 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import com.datadoghq.sketch.ddsketch.Serializer;
+
 import java.util.Objects;
+
+import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.LINEAR;
+import static com.datadoghq.sketch.ddsketch.Serializer.*;
 
 /**
  * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link LogarithmicMapping}) by
@@ -91,6 +96,18 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     }
 
     @Override
+    public int serializedSize() {
+        return doubleFieldSize(1, gamma())
+                + fieldSize(3, LINEAR.ordinal());
+    }
+
+    @Override
+    public void serialize(Serializer serializer) {
+        serializer.writeDouble(1, gamma());
+        serializer.writeUnsignedInt32(3, LINEAR.ordinal());
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -106,12 +123,7 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
         return Objects.hash(numSignificantBinaryDigits);
     }
 
-    @Override
-    public com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto() {
-        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
-            .setGamma(Math.pow(2, 1.0 / multiplier))
-            .setIndexOffset(0)
-            .setInterpolation(com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.LINEAR)
-            .build();
+    double gamma() {
+        return Math.pow(2, 1.0 / multiplier);
     }
 }

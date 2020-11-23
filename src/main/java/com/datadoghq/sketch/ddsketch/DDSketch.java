@@ -15,10 +15,14 @@ import com.datadoghq.sketch.ddsketch.store.CollapsingLowestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
+
+import static com.datadoghq.sketch.ddsketch.Serializer.doubleFieldSize;
+import static com.datadoghq.sketch.ddsketch.Serializer.embeddedFieldSize;
 
 /**
  * A {@link QuantileSketch} with relative-error guarantees. This sketch computes quantile values with an approximation
@@ -65,7 +69,7 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         this.zeroCount = zeroCount;
     }
 
-    private DDSketch(
+    DDSketch(
         IndexMapping indexMapping,
         Store negativeValueStore,
         Store positiveValueStore,
@@ -330,36 +334,50 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     }
 
     /**
-     * Generates a protobuf representation of this {@code DDSketch}.
-     *
-     * @return a protobuf representation of this {@code DDSketch}
+     * @return the size of the sketch when serialized in protobuf
      */
-    public com.datadoghq.sketch.ddsketch.proto.DDSketch toProto() {
-        return com.datadoghq.sketch.ddsketch.proto.DDSketch.newBuilder()
-            .setPositiveValues(positiveValueStore.toProto())
-            .setNegativeValues(negativeValueStore.toProto())
-            .setZeroCount(zeroCount)
-            .setMapping(indexMapping.toProto())
-            .build();
+    public int serializedSize() {
+        return embeddedFieldSize(1, indexMapping.serializedSize())
+                + embeddedFieldSize(2, positiveValueStore.serializedSize())
+                + embeddedFieldSize(3, negativeValueStore.serializedSize())
+                + doubleFieldSize(4, zeroCount);
     }
 
     /**
-     * Builds a new instance of {@code DDSketch} based on the provided protobuf representation.
+     * Produces protobuf encoded bytes which are equivalent
+     * to using the official protobuf bindings, without requiring
+     * a runtime dependency on protobuf-java.
      *
-     * @param storeSupplier the constructor of the {@link Store} implementation to be used for encoding bin counters
-     * @param proto the protobuf representation of a sketch
-     * @return an instance of {@code DDSketch} that matches the protobuf representation
+     * Currently this API is asymmetric in that there is not
+     * an equivalent method to deserialize a sketch from a
+     * protobuf message. {@code DDSketchProtoBinding} can
+     * be used for this purpose, but requires a runtime
+     * dependency on protobuf-java. This API may be made
+     * symmetric in the future.
+     *
+     * @return the sketch serialized as a {@code ByteBuffer}.
      */
-    public static DDSketch fromProto(
-        Supplier<? extends Store> storeSupplier,
-        com.datadoghq.sketch.ddsketch.proto.DDSketch proto
-    ) {
-        return new DDSketch(
-            IndexMapping.fromProto(proto.getMapping()),
-            Store.fromProto(storeSupplier, proto.getNegativeValues()),
-            Store.fromProto(storeSupplier, proto.getPositiveValues()),
-            proto.getZeroCount()
-        );
+    public ByteBuffer serialize() {
+        int indexMappingSize = indexMapping.serializedSize();
+        int positiveValueStoreSize = positiveValueStore.serializedSize();
+        int negativeValueStoreSize = negativeValueStore.serializedSize();
+        int totalSize = embeddedFieldSize(1, indexMappingSize)
+                + embeddedFieldSize(2, positiveValueStoreSize)
+                + embeddedFieldSize(3, negativeValueStoreSize)
+                + doubleFieldSize(4, zeroCount);
+        Serializer serializer = new Serializer(totalSize);
+        serializer.writeHeader(1, indexMappingSize);
+        indexMapping.serialize(serializer);
+        serializer.writeHeader(2, positiveValueStoreSize);
+        positiveValueStore.serialize(serializer);
+        serializer.writeHeader(3, negativeValueStoreSize);
+        negativeValueStore.serialize(serializer);
+        serializer.writeDouble(4, zeroCount);
+        return serializer.getBuffer();
+    }
+
+    double getZeroCount() {
+        return zeroCount;
     }
 
     // Preset sketches

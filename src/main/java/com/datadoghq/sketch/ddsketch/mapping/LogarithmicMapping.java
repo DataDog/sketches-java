@@ -5,6 +5,8 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.NONE;
+
 /**
  * An {@link IndexMapping} that is <i>memory-optimal</i>, that is to say that given a targeted relative accuracy, it
  * requires the least number of indices to cover a given range of values. This is done by logarithmically mapping
@@ -44,7 +46,7 @@ public class LogarithmicMapping extends LogLikeIndexMapping {
     }
 
     @Override
-    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto() {
-        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.NONE;
+    Interpolation interpolation() {
+        return NONE;
     }
 }

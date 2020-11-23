@@ -5,12 +5,15 @@
 
 package com.datadoghq.sketch.ddsketch.store;
 
+import com.datadoghq.sketch.ddsketch.Serializer;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -57,7 +60,16 @@ abstract class StoreTest {
         final Map<Integer, Double> expectedNonZeroCounts = getNonZeroCounts(getCounts(bins));
         assertEncodes(expectedNonZeroCounts, store);
         // Test protobuf round-trip
-        assertEncodes(expectedNonZeroCounts, Store.fromProto(this::newStore, store.toProto()));
+        assertEncodes(expectedNonZeroCounts, StoreProtoBinding.fromProto(this::newStore, StoreProtoBinding.toProto(store)));
+        Serializer serializer = new Serializer(store.serializedSize());
+        store.serialize(serializer);
+        ByteBuffer buffer = serializer.getBuffer();
+        try {
+            assertEncodes(expectedNonZeroCounts, StoreProtoBinding.fromProto(this::newStore,
+                    com.datadoghq.sketch.ddsketch.proto.Store.parseFrom(buffer)));
+        } catch (InvalidProtocolBufferException e) {
+            fail(e);
+        }
     }
 
     private static void assertEncodes(Map<Integer, Double> expectedCounts, Store store) {
@@ -300,7 +312,7 @@ abstract class StoreTest {
         store.add(10);
         store.add(100);
         Store copy = store.copy();
-        assertEquals(store.getTotalCount(), copy.getTotalCount(), 1e-7);
+        assertEquals(store.getTotalCount(), copy.getTotalCount(), AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
     }
 
     public static Stream<Arguments> intStreams() {

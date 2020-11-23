@@ -5,6 +5,8 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import com.datadoghq.sketch.ddsketch.Serializer;
+
 /**
  * A mapping between {@code double} values and {@code int} values that imposes relative guarantees on the composition
  * of {@link #value} and {@link #index}. Specifically, for any value {@code v} between {@link #minIndexableValue()}
@@ -74,20 +76,7 @@ public interface IndexMapping {
 
     double maxIndexableValue();
 
-    /**
-     * Generates a protobuf representation of this {@code IndexMapping}.
-     *
-     * @return a protobuf representation of this {@code IndexMapping}
-     */
-    com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto();
+    int serializedSize();
 
-    /**
-     * Returns an instance of {@code IndexMapping} that matches the provided protobuf representation.
-     *
-     * @param proto the protobuf representation of an {@code IndexMapping}
-     * @return an instance of {@code IndexMapping} that matches the protobuf representation
-     */
-    static IndexMapping fromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping proto) {
-        return LogLikeIndexMapping.fromProto(proto);
-    }
+    void serialize(Serializer serializer);
 }
