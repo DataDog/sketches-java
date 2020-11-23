@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @BenchmarkMode(Mode.AverageTime)
-public class ComputeCount {
+public class Summaries {
 
     @Param
     DataGenerator generator;
@@ -41,4 +41,25 @@ public class ComputeCount {
     public double getCount() {
         return sketch.getCount();
     }
+
+    @Benchmark
+    public double getMax() {
+        return sketch.getMaxValue();
+    }
+
+    @Benchmark
+    public double getMin() {
+        return sketch.getMinValue();
+    }
+
+    @Benchmark
+    public double getMedian() {
+        return sketch.getValueAtQuantile(0.5);
+    }
+
+    @Benchmark
+    public double getP99() {
+        return sketch.getValueAtQuantile(0.99);
+    }
+
 }
