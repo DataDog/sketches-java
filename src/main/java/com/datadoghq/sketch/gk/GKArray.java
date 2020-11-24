@@ -129,6 +129,14 @@ public class GKArray implements QuantileSketch<GKArray> {
     }
 
     @Override
+    public void clear() {
+        entries.clear();
+        incomingIndex = 0;
+        compressedCount = 0;
+        minValue = Double.MAX_VALUE;
+    }
+
+    @Override
     public double getCount() {
         if (incomingIndex > 0) {
             compress();

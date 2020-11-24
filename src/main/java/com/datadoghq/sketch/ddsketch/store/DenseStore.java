@@ -47,7 +47,7 @@ public abstract class DenseStore implements Store {
     DenseStore(DenseStore store) {
         this.arrayLengthGrowthIncrement = store.arrayLengthGrowthIncrement;
         this.arrayLengthOverhead = store.arrayLengthOverhead;
-        this.counts = store.counts == null ? null : Arrays.copyOf(store.counts, store.counts.length);
+        this.counts = store.counts == null || store.isEmpty() ? null : Arrays.copyOf(store.counts, store.counts.length);
         this.offset = store.offset;
         this.minIndex = store.minIndex;
         this.maxIndex = store.maxIndex;
@@ -80,6 +80,16 @@ public abstract class DenseStore implements Store {
         counts[arrayIndex] += bin.getCount();
     }
 
+    @Override
+    public void clear() {
+        if (null != counts) {
+            Arrays.fill(counts, 0D);
+        }
+        maxIndex = Integer.MIN_VALUE;
+        minIndex = Integer.MAX_VALUE;
+        offset = 0;
+    }
+
     /**
      * Normalize the store, if necessary, so that the counter of the specified index can be updated.
      *
@@ -109,7 +119,9 @@ public abstract class DenseStore implements Store {
         if (isEmpty()) {
 
             final int initialLength = Math.toIntExact(getNewLength(newMinIndex, newMaxIndex));
-            counts = new double[initialLength];
+            if (null == counts || initialLength >= counts.length) {
+                counts = new double[initialLength];
+            }
             offset = newMinIndex;
             minIndex = newMinIndex;
             maxIndex = newMinIndex;

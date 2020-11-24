@@ -53,6 +53,13 @@ public interface QuantileSketch<QS extends QuantileSketch<QS>> extends DoubleCon
     }
 
     /**
+     * Sets all counts in the sketch to zero.
+     * The sketch behaves as if it were empty after this call,
+     * but any allocated memory is not released.
+     */
+    void clear();
+
+    /**
      * @return the total number of values that have been added to this sketch
      */
     double getCount();

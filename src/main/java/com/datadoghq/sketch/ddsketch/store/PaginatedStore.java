@@ -40,14 +40,14 @@ public final class PaginatedStore implements Store {
 
     PaginatedStore(PaginatedStore store) {
         this(store.minPageIndex);
-        this.pages = deepCopy(store.pages);
+        this.pages = store.isEmpty() ? null : deepCopy(store.pages);
     }
 
     @Override
     public boolean isEmpty() {
         // won't initialise any pages until a value is added,
         // and values can't be removed.
-        return null == pages;
+        return minPageIndex == Integer.MAX_VALUE;
     }
 
     @Override
@@ -123,7 +123,7 @@ public final class PaginatedStore implements Store {
         if (pageIndex < minPageIndex) {
             // then space needs to be made before the first page,
             // unless this is the first insertion
-            if (null == pages) {
+            if (isEmpty()) {
                 lazyInit(pageIndex);
             } else {
                 shiftPagesRight(pageIndex);
@@ -138,7 +138,9 @@ public final class PaginatedStore implements Store {
 
     private void lazyInit(int pageIndex) {
         minPageIndex = pageIndex;
-        pages = new double[GROWTH][];
+        if (null == pages) {
+            pages = new double[GROWTH][];
+        }
     }
 
     private void shiftPagesRight(int pageIndex) {
@@ -247,6 +249,18 @@ public final class PaginatedStore implements Store {
     @Override
     public Store copy() {
         return new PaginatedStore(this);
+    }
+
+    @Override
+    public void clear() {
+        if (null != pages) {
+            for (double[] page : pages) {
+                if (null != page) {
+                    Arrays.fill(page, 0D);
+                }
+            }
+        }
+        minPageIndex = Integer.MAX_VALUE;
     }
 
     @Override

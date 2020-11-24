@@ -26,4 +26,10 @@ abstract class CollapsingDenseStore extends DenseStore {
     long getNewLength(int newMinIndex, int newMaxIndex) {
         return Math.min(super.getNewLength(newMinIndex, newMaxIndex), maxNumBins);
     }
+
+    @Override
+    public void clear() {
+        super.clear();
+        isCollapsed = false;
+    }
 }
