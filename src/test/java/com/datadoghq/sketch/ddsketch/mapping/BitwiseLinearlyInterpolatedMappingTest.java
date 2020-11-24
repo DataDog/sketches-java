@@ -22,11 +22,10 @@ class BitwiseLinearlyInterpolatedMappingTest extends IndexMappingTest {
     void testProtoRoundTrip() {
         final BitwiseLinearlyInterpolatedMapping mapping = getMapping(1e-2);
         final IndexMapping roundTripMapping = IndexMapping.fromProto(mapping.toProto());
-        final IndexMapping expectedMapping = new LinearlyInterpolatedMapping(mapping.relativeAccuracy());
-        assertEquals(expectedMapping.getClass(), roundTripMapping.getClass());
-        assertEquals(expectedMapping.relativeAccuracy(), roundTripMapping.relativeAccuracy(),
+        assertEquals(LinearlyInterpolatedMapping.class, roundTripMapping.getClass());
+        assertEquals(mapping.relativeAccuracy(), roundTripMapping.relativeAccuracy(),
             AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
-        assertEquals(expectedMapping.value(0), roundTripMapping.value(0),
+        assertEquals(mapping.value(0), roundTripMapping.value(0),
             AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
     }
 }
