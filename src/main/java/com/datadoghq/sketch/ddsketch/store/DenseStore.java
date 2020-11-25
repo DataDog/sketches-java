@@ -47,10 +47,17 @@ public abstract class DenseStore implements Store {
     DenseStore(DenseStore store) {
         this.arrayLengthGrowthIncrement = store.arrayLengthGrowthIncrement;
         this.arrayLengthOverhead = store.arrayLengthOverhead;
-        this.counts = store.counts == null || store.isEmpty() ? null : Arrays.copyOf(store.counts, store.counts.length);
-        this.offset = store.offset;
         this.minIndex = store.minIndex;
         this.maxIndex = store.maxIndex;
+        if (store.counts != null && !store.isEmpty()) {
+            this.counts = Arrays.copyOfRange(store.counts,
+                    store.minIndex - store.offset,
+                    store.maxIndex - store.offset + 1);
+            this.offset = store.minIndex;
+        } else {
+            // should be zero anyway, but just in case
+            this.offset = store.offset;
+        }
     }
 
     @Override
@@ -124,7 +131,7 @@ public abstract class DenseStore implements Store {
             }
             offset = newMinIndex;
             minIndex = newMinIndex;
-            maxIndex = newMinIndex;
+            maxIndex = newMaxIndex;
             adjust(newMinIndex, newMaxIndex);
 
         } else if (newMinIndex >= offset && newMaxIndex < (long) offset + counts.length) {

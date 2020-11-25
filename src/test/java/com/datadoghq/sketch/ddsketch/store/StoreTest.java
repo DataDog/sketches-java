@@ -288,4 +288,13 @@ abstract class StoreTest {
         final Store copy = store.copy();
         test(bins, copy);
     }
+
+    @Test
+    public void testCountsPreservedAfterCopy() {
+        Store store = newStore();
+        store.add(10);
+        store.add(100);
+        Store copy = store.copy();
+        assertEquals(store.getTotalCount(), copy.getTotalCount(), 1e-7);
+    }
 }
