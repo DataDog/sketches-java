@@ -32,63 +32,80 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
 
         final QS emptySketch = newSketch();
 
-        assertThrows(
-            NoSuchElementException.class,
-            emptySketch::getMinValue
-        );
-
-        assertThrows(
-            NoSuchElementException.class,
-            emptySketch::getMaxValue
-        );
-
-        assertThrows(
-            NoSuchElementException.class,
-            () -> emptySketch.getValueAtQuantile(0.5)
-        );
-
-        assertThrows(
-            NoSuchElementException.class,
-            () -> emptySketch.getValuesAtQuantiles(new double[]{ 0.5 })
-        );
-
-        assertThrows(
-            NullPointerException.class,
-            () -> emptySketch.mergeWith(null)
-        );
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> emptySketch.accept(0, -1)
-        );
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> emptySketch.accept(1, -1)
-        );
+        emptySketchAssertions(emptySketch);
 
         final QS nonEmptySketch = newSketch();
         nonEmptySketch.accept(0);
+        nonEmptySketchAssertions(nonEmptySketch);
 
+    }
+
+    private void emptySketchAssertions(QS emptySketch) {
         assertThrows(
-            IllegalArgumentException.class,
-            () -> nonEmptySketch.getValueAtQuantile(-0.1)
+                NoSuchElementException.class,
+                emptySketch::getMinValue
         );
 
         assertThrows(
-            IllegalArgumentException.class,
-            () -> nonEmptySketch.getValueAtQuantile(1.1)
+                NoSuchElementException.class,
+                emptySketch::getMaxValue
         );
 
         assertThrows(
-            IllegalArgumentException.class,
-            () -> nonEmptySketch.getValuesAtQuantiles(new double[]{ 0, -0.1 })
+                NoSuchElementException.class,
+                () -> emptySketch.getValueAtQuantile(0.5)
         );
 
         assertThrows(
-            IllegalArgumentException.class,
-            () -> nonEmptySketch.getValuesAtQuantiles(new double[]{ 1.1, 1 })
+                NoSuchElementException.class,
+                () -> emptySketch.getValuesAtQuantiles(new double[]{ 0.5 })
         );
+
+        assertThrows(
+                NullPointerException.class,
+                () -> emptySketch.mergeWith(null)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> emptySketch.accept(0, -1)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> emptySketch.accept(1, -1)
+        );
+    }
+
+    private void nonEmptySketchAssertions(QS nonEmptySketch) {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> nonEmptySketch.getValueAtQuantile(-0.1)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> nonEmptySketch.getValueAtQuantile(1.1)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> nonEmptySketch.getValuesAtQuantiles(new double[]{ 0, -0.1 })
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> nonEmptySketch.getValuesAtQuantiles(new double[]{ 1.1, 1 })
+        );
+    }
+
+    @Test
+    protected void clearSketchShouldBehaveEmpty() {
+        final QS sketch = newSketch();
+        sketch.accept(0);
+        sketch.clear();
+        assertTrue(sketch.isEmpty());
+        emptySketchAssertions(sketch);
     }
 
     protected void test(boolean merged, double[] values, QS sketch) {

@@ -246,6 +246,13 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     }
 
     @Override
+    public void clear() {
+        negativeValueStore.clear();
+        positiveValueStore.clear();
+        zeroCount = 0D;
+    }
+
+    @Override
     public double getCount() {
         return zeroCount + negativeValueStore.getTotalCount() + positiveValueStore.getTotalCount();
     }

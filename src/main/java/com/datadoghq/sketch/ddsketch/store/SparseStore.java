@@ -53,6 +53,11 @@ public class SparseStore implements Store {
     }
 
     @Override
+    public void clear() {
+        this.bins.clear();
+    }
+
+    @Override
     public int getMinIndex() {
         return bins.firstKey();
     }

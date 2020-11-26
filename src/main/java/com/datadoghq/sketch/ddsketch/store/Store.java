@@ -71,6 +71,13 @@ public interface Store {
      */
     Store copy();
 
+
+    /**
+     * Zeros all counts in the store. The store behaves as if
+     * empty after this call, but no underlying storage is released.
+     */
+    void clear();
+
     /**
      * @return {@code true} iff the {@code Store} does not contain any non-zero counter
      */

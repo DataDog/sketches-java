@@ -47,10 +47,17 @@ public abstract class DenseStore implements Store {
     DenseStore(DenseStore store) {
         this.arrayLengthGrowthIncrement = store.arrayLengthGrowthIncrement;
         this.arrayLengthOverhead = store.arrayLengthOverhead;
-        this.counts = store.counts == null ? null : Arrays.copyOf(store.counts, store.counts.length);
-        this.offset = store.offset;
         this.minIndex = store.minIndex;
         this.maxIndex = store.maxIndex;
+        if (store.counts != null && !store.isEmpty()) {
+            this.counts = Arrays.copyOfRange(store.counts,
+                    store.minIndex - store.offset,
+                    store.maxIndex - store.offset + 1);
+            this.offset = store.minIndex;
+        } else {
+            // should be zero anyway, but just in case
+            this.offset = store.offset;
+        }
     }
 
     @Override
@@ -78,6 +85,16 @@ public abstract class DenseStore implements Store {
         }
         final int arrayIndex = normalize(bin.getIndex());
         counts[arrayIndex] += bin.getCount();
+    }
+
+    @Override
+    public void clear() {
+        if (null != counts) {
+            Arrays.fill(counts, 0D);
+        }
+        maxIndex = Integer.MIN_VALUE;
+        minIndex = Integer.MAX_VALUE;
+        offset = 0;
     }
 
     /**
@@ -109,10 +126,12 @@ public abstract class DenseStore implements Store {
         if (isEmpty()) {
 
             final int initialLength = Math.toIntExact(getNewLength(newMinIndex, newMaxIndex));
-            counts = new double[initialLength];
+            if (null == counts || initialLength >= counts.length) {
+                counts = new double[initialLength];
+            }
             offset = newMinIndex;
             minIndex = newMinIndex;
-            maxIndex = newMinIndex;
+            maxIndex = newMaxIndex;
             adjust(newMinIndex, newMaxIndex);
 
         } else if (newMinIndex >= offset && newMaxIndex < (long) offset + counts.length) {

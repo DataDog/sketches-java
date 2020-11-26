@@ -171,6 +171,24 @@ abstract class StoreTest {
     }
 
     @Test
+    void testClear() {
+        final Store store = newStore();
+        assertTrue(store.isEmpty());
+        store.clear();
+        assertTrue(store.isEmpty());
+        int[] beforeClear = IntStream.range(0, 10000).toArray();
+        Arrays.stream(beforeClear).forEach(store::add);
+        test(toBins(beforeClear), store);
+        assertFalse(store.isEmpty());
+        store.clear();
+        assertTrue(store.isEmpty());
+        // add some more values at an offset
+        int[] afterClear = IntStream.range(10000, 20000).toArray();
+        Arrays.stream(afterClear).forEach(store::add);
+        test(toBins(afterClear), store);
+    }
+
+    @Test
     void testDecreasingLinearly() {
         testAdding(IntStream.range(0, 10000).map(i -> -i).toArray());
     }
@@ -269,5 +287,14 @@ abstract class StoreTest {
         Arrays.stream(bins).forEach(store::add);
         final Store copy = store.copy();
         test(bins, copy);
+    }
+
+    @Test
+    public void testCountsPreservedAfterCopy() {
+        Store store = newStore();
+        store.add(10);
+        store.add(100);
+        Store copy = store.copy();
+        assertEquals(store.getTotalCount(), copy.getTotalCount(), 1e-7);
     }
 }
