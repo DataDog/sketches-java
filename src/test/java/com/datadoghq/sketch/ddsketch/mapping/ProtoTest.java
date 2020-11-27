@@ -54,7 +54,7 @@ class ProtoTest {
                 new BitwiseLinearlyInterpolatedMapping(1e-2),
                 com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
                     .setGamma(Math.pow(2, 1.0 / (1 << 6)))
-                    .setIndexOffset(64)
+                    .setIndexOffset(0)
                     .setInterpolation(com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.LINEAR)
                     .build()
             )
