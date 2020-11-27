@@ -21,7 +21,7 @@ dependencies {
 }
 
 group = 'com.datadoghq'
-version = '0.5.0'
+version = '0.5.1-SNAPSHOT'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
