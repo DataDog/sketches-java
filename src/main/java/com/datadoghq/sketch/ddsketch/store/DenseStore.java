@@ -236,6 +236,16 @@ public abstract class DenseStore implements Store {
     }
 
     @Override
+    public void forEach(BinAcceptor acceptor) {
+        for (int i = minIndex; i <= maxIndex; i++) {
+            double value = counts[i-offset];
+            if (value != 0) {
+                acceptor.accept(i, value);
+            }
+        }
+    }
+
+    @Override
     public Stream<Bin> getAscendingStream() {
         if (isEmpty()) {
             return Stream.of();

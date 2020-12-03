@@ -121,6 +121,12 @@ public interface Store {
     }
 
     /**
+     * Supplies each bin to the acceptor
+     * @param acceptor consumes this store's bins
+     */
+    void forEach(BinAcceptor acceptor);
+
+    /**
      * @return a stream with the non-empty bins of this store as its source
      */
     default Stream<Bin> getStream() {
