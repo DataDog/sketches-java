@@ -158,9 +158,12 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     }
 
     public double getRelativeAccuracy() {
-        return Math.pow(
-            indexMapping.relativeAccuracy(),
+        final double mappingRelativeAccuracy = indexMapping.relativeAccuracy();
+        final double mappingGamma = (1 + mappingRelativeAccuracy) / (1 - mappingRelativeAccuracy);
+        final double adjustedGamma = Math.pow(
+            mappingGamma,
             1 + Math.max(negativeValueStore.maxShift(), positiveValueStore.maxShift()));
+        return (adjustedGamma - 1) / (adjustedGamma + 1);
     }
 
     /**

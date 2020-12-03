@@ -11,8 +11,9 @@ import java.util.function.Supplier;
  * <p>
  * Bucket merging happens when rescaling the store. The rescaling factor is always a power of 2, so that the size of the
  * merged buckets (that is to say the number of contiguous indices that are mapped to the same counter) can be expressed
- * as \(2^n\). The relative accuracy of a sketch that uses such a store is \(\alpha^{2^n}\), where \(\alpha\) is the
- * relative accuracy of the index mapping that the store uses.
+ * as \(2^n\). The relative accuracy of a sketch that uses such a store is \(\frac{\gamma^{2^n}-1}{\gamma^{2^n}+1}\),
+ * where \(\gamma=\frac{1+\alpha}{1-\alpha}\) and \(\alpha\) is the relative accuracy of the index mapping that the
+ * store uses. For small values of \(\alpha\), this is roughly \(2^n\alpha\).
  */
 public class BoundedSizeRescalingStore extends RescalingStore {
 
