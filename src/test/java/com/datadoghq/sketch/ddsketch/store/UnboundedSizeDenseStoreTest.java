@@ -8,18 +8,18 @@ package com.datadoghq.sketch.ddsketch.store;
 class UnboundedSizeDenseStoreTest extends ExhaustiveStoreTest {
 
     @Override
-    Store newStore() {
+    protected Store newStore() {
         return new UnboundedSizeDenseStore();
     }
 
     @Override
-    void testExtremeValues() {
+    protected void testExtremeValues() {
         // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one another as it
         // would allocate an excessively large array.
     }
 
     @Override
-    void testMergingExtremeValues() {
+    protected void testMergingExtremeValues() {
         // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one another as it
         // would allocate an excessively large array.
     }

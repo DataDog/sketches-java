@@ -16,12 +16,12 @@ abstract class CollapsingLowestDenseStoreTest extends StoreTest {
     abstract int maxNumBins();
 
     @Override
-    Store newStore() {
+    protected Store newStore() {
         return new CollapsingLowestDenseStore(maxNumBins());
     }
 
     @Override
-    Map<Integer, Double> getCounts(Bin... bins) {
+    protected Map<Integer, Double> getCounts(Store store, Bin... bins) {
         final OptionalInt maxIndex = Arrays.stream(bins)
             .filter(bin -> bin.getCount() > 0)
             .mapToInt(Bin::getIndex)

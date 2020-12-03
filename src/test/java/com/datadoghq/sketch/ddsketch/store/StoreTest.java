@@ -22,11 +22,11 @@ import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-abstract class StoreTest {
+public abstract class StoreTest {
 
-    abstract Store newStore();
+    protected abstract Store newStore();
 
-    abstract Map<Integer, Double> getCounts(Bin[] bins);
+    protected abstract Map<Integer, Double> getCounts(Store store, Bin[] bins);
 
     private static Map<Integer, Double> getCounts(Stream<Bin> bins) {
         return bins.collect(Collectors.groupingBy(Bin::getIndex, Collectors.summingDouble(Bin::getCount)));
@@ -50,7 +50,7 @@ abstract class StoreTest {
     }
 
     private void test(Bin[] bins, Store store) {
-        final Map<Integer, Double> expectedNonZeroCounts = getNonZeroCounts(getCounts(bins));
+        final Map<Integer, Double> expectedNonZeroCounts = getNonZeroCounts(getCounts(store, bins));
         assertEncodes(expectedNonZeroCounts, store);
         // Test protobuf round-trip
         assertEncodes(expectedNonZeroCounts, Store.fromProto(this::newStore, store.toProto()));
@@ -216,7 +216,7 @@ abstract class StoreTest {
     }
 
     @Test
-    void testExtremeValues() {
+    protected void testExtremeValues() {
         testAdding(Integer.MIN_VALUE);
         testAdding(Integer.MAX_VALUE);
         testAdding(0, Integer.MIN_VALUE);
@@ -262,7 +262,7 @@ abstract class StoreTest {
     }
 
     @Test
-    void testMergingExtremeValues() {
+    protected void testMergingExtremeValues() {
         testMerging(new int[]{ 0 }, new int[]{ Integer.MIN_VALUE });
         testMerging(new int[]{ 0 }, new int[]{ Integer.MAX_VALUE });
         testMerging(new int[]{ Integer.MIN_VALUE }, new int[]{ 0 });

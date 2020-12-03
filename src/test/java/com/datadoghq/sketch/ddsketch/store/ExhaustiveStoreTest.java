@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 abstract class ExhaustiveStoreTest extends StoreTest {
 
     @Override
-    Map<Integer, Double> getCounts(Bin... bins) {
+    protected Map<Integer, Double> getCounts(Store store, Bin... bins) {
         return Arrays.stream(bins)
             .collect(Collectors.groupingBy(
                 Bin::getIndex,

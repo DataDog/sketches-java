@@ -157,6 +157,12 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         return positiveValueStore;
     }
 
+    public double getRelativeAccuracy() {
+        return Math.pow(
+            indexMapping.relativeAccuracy(),
+            1 + Math.max(negativeValueStore.maxShift(), positiveValueStore.maxShift()));
+    }
+
     /**
      * {@inheritDoc}
      *

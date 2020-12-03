@@ -8,7 +8,7 @@ package com.datadoghq.sketch.ddsketch.store;
 class SparseStoreTest extends ExhaustiveStoreTest {
 
     @Override
-    Store newStore() {
+    protected Store newStore() {
         return new SparseStore();
     }
 }

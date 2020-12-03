@@ -154,6 +154,13 @@ public interface Store {
     Iterator<Bin> getDescendingIterator();
 
     /**
+     * @return to what extent an inserted index can be shifted
+     */
+    default int maxShift() {
+        return 0;
+    }
+
+    /**
      * Generates a protobuf representation of this {@code Store}.
      *
      * @return a protobuf representation of this {@code Store}
