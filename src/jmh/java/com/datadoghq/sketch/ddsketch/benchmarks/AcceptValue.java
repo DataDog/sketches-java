@@ -36,7 +36,7 @@ public class AcceptValue {
         this.sketch = sketchOption.create(relativeAccuracy);
         this.data = new long[1 << logCount];
         for (int i = 0; i < data.length; ++i) {
-            data[i] = unit.toNanos(Math.abs(Math.round(generator.nextValue())));
+            data[i] = unit.toNanos(Math.round(generator.nextValue()));
         }
     }
 

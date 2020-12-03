@@ -35,8 +35,8 @@ public class Merge {
         this.left = sketchOption.create(relativeAccuracy);
         this.right = sketchOption.create(relativeAccuracy);
         for (int i = 0; i < count; ++i) {
-            left.accept(unit.toNanos(Math.abs(Math.round(generator.nextValue()))));
-            right.accept(unit.toNanos(Math.abs(Math.round(generator.nextValue()))));
+            left.accept(unit.toNanos(Math.round(generator.nextValue())));
+            right.accept(unit.toNanos(Math.round(generator.nextValue())));
         }
     }
 

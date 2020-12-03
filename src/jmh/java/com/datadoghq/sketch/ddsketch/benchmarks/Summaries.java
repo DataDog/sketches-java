@@ -33,7 +33,7 @@ public class Summaries {
     public void init() {
         this.sketch = sketchOption.create(relativeAccuracy);
         for (int i = 0; i < count; ++i) {
-            sketch.accept(unit.toNanos(Math.abs(Math.round(generator.nextValue()))));
+            sketch.accept(unit.toNanos(Math.round(generator.nextValue())));
         }
     }
 
