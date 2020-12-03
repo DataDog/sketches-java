@@ -56,6 +56,7 @@ public abstract class RescalingStore implements Store {
     @Override
     public void clear() {
         delegate.clear();
+        scalingFactor = 1;
     }
 
     @Override
