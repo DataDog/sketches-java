@@ -83,6 +83,23 @@ public final class PaginatedStore implements Store {
     }
 
     @Override
+    public void forEach(BinAcceptor acceptor) {
+        if (isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < pages.length; ++i) {
+            double[] page = pages[i];
+            if (null != page) {
+                for (int j = 0; j < page.length; ++j) {
+                    if (page[j] != 0) {
+                        acceptor.accept(((i + minPageIndex) << PAGE_SHIFT) + j, page[j]);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public double getTotalCount() {
         if (isEmpty()) {
             return 0D;

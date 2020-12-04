@@ -68,6 +68,11 @@ public class SparseStore implements Store {
     }
 
     @Override
+    public void forEach(BinAcceptor acceptor) {
+        bins.forEach(acceptor::accept);
+    }
+
+    @Override
     public Iterator<Bin> getAscendingIterator() {
         return getBinIterator(bins);
     }

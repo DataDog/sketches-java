@@ -7,14 +7,12 @@ package com.datadoghq.sketch.ddsketch.store;
 
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -34,6 +32,12 @@ abstract class StoreTest {
 
     private static Map<Integer, Double> getCounts(Iterator<Bin> bins) {
         return getCounts(StreamSupport.stream(Spliterators.spliteratorUnknownSize(bins, 0), false));
+    }
+
+    private static Map<Integer, Double> getCounts(Store store) {
+        Map<Integer, Double> counts = new TreeMap<>();
+        store.forEach(counts::put);
+        return counts;
     }
 
     private static Map<Integer, Double> getNonZeroCounts(Map<Integer, Double> counts) {
@@ -83,6 +87,7 @@ abstract class StoreTest {
         assertSameCounts(expectedCounts, getCounts(store.getDescendingStream()));
         assertSameCounts(expectedCounts, getCounts(store.getAscendingIterator()));
         assertSameCounts(expectedCounts, getCounts(store.getDescendingIterator()));
+        assertSameCounts(expectedCounts, getCounts(store));
     }
 
     private static Bin[] toBins(int... values) {
@@ -296,5 +301,25 @@ abstract class StoreTest {
         store.add(100);
         Store copy = store.copy();
         assertEquals(store.getTotalCount(), copy.getTotalCount(), 1e-7);
+    }
+
+    public static Stream<Arguments> intStreams() {
+        return Stream.of(
+                new int[0],
+                IntStream.range(0, 10000).toArray(),
+                IntStream.range(0, 10000).map(i -> i % 10).toArray(),
+                IntStream.range(0, 10000).map(i -> i / 10).toArray(),
+                IntStream.range(0, 10000).map(i -> i * 10).toArray()
+        ).map(Arguments::of);
+    }
+
+    @ParameterizedTest
+    @MethodSource("intStreams")
+    public void testForEach(int[] data) {
+        Store store = newStore();
+        Arrays.stream(data).forEach(store::add);
+        Map<Integer, Double> expect = getCounts(store);
+        Map<Integer, Double> got = getCounts(store.getAscendingIterator());
+        assertEquals(expect, got);
     }
 }
