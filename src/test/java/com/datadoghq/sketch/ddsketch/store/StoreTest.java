@@ -298,8 +298,10 @@ abstract class StoreTest {
 
     public static Stream<Arguments> intStreams() {
         return Stream.of(
+                new int[0],
                 IntStream.range(0, 10000).toArray(),
                 IntStream.range(0, 10000).map(i -> i % 10).toArray(),
+                IntStream.range(0, 10000).map(i -> i / 10).toArray(),
                 IntStream.range(0, 10000).map(i -> i * 10).toArray()
         ).map(Arguments::of);
     }

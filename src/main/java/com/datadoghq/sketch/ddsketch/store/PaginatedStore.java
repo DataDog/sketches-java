@@ -84,6 +84,9 @@ public final class PaginatedStore implements Store {
 
     @Override
     public void forEach(BinAcceptor acceptor) {
+        if (isEmpty()) {
+            return;
+        }
         int base = minPageIndex;
         for (double[] page : pages) {
             if (null != page) {
