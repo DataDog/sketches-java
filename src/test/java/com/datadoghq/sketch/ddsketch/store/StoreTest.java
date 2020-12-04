@@ -34,6 +34,12 @@ abstract class StoreTest {
         return getCounts(StreamSupport.stream(Spliterators.spliteratorUnknownSize(bins, 0), false));
     }
 
+    private static Map<Integer, Double> getCounts(Store store) {
+        Map<Integer, Double> counts = new TreeMap<>();
+        store.forEach(counts::put);
+        return counts;
+    }
+
     private static Map<Integer, Double> getNonZeroCounts(Map<Integer, Double> counts) {
         return counts.entrySet().stream()
             .filter(entry -> entry.getValue() > 0)
@@ -81,6 +87,7 @@ abstract class StoreTest {
         assertSameCounts(expectedCounts, getCounts(store.getDescendingStream()));
         assertSameCounts(expectedCounts, getCounts(store.getAscendingIterator()));
         assertSameCounts(expectedCounts, getCounts(store.getDescendingIterator()));
+        assertSameCounts(expectedCounts, getCounts(store));
     }
 
     private static Bin[] toBins(int... values) {
@@ -311,10 +318,8 @@ abstract class StoreTest {
     public void testForEach(int[] data) {
         Store store = newStore();
         Arrays.stream(data).forEach(store::add);
-        Map<Integer, Double> expect = new TreeMap<>();
-        Map<Integer, Double> got = new TreeMap<>();
-        store.getAscendingStream().forEach(bin -> expect.put(bin.getIndex(), bin.getCount()));
-        store.forEach(got::put);
+        Map<Integer, Double> expect = getCounts(store);
+        Map<Integer, Double> got = getCounts(store.getAscendingIterator());
         assertEquals(expect, got);
     }
 }

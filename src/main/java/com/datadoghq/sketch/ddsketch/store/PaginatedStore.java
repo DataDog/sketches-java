@@ -87,16 +87,15 @@ public final class PaginatedStore implements Store {
         if (isEmpty()) {
             return;
         }
-        int base = minPageIndex;
-        for (double[] page : pages) {
+        for (int i = 0; i < pages.length; ++i) {
+            double[] page = pages[i];
             if (null != page) {
-                for (int i = 0; i < page.length; ++i) {
-                    if (page[i] != 0) {
-                        acceptor.accept(base + i, page[i]);
+                for (int j = 0; j < page.length; ++j) {
+                    if (page[j] != 0) {
+                        acceptor.accept(((i + minPageIndex) << PAGE_SHIFT) + j, page[j]);
                     }
                 }
             }
-            base += PAGE_SIZE;
         }
     }
 
