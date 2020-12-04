@@ -57,7 +57,7 @@ public class FootprintTest {
         for (double relativeError = 1e-5; relativeError < 1e-2; relativeError *= 10) {
             DDSketch sketch = sketchConstructor.apply(relativeError);
             for (int i = 0; i < 100_000; ++i) {
-                long nanos = timeUnit.toNanos(Math.round(Math.abs(distribution.nextValue())));
+                long nanos = timeUnit.toNanos(Math.round(distribution.nextValue()));
                 sketch.accept(nanos);
             }
             printFootprint(distribution, sketch);
