@@ -193,7 +193,7 @@ public final class PaginatedStore implements Store {
         if (store instanceof PaginatedStore) {
             mergeWith((PaginatedStore) store);
         } else {
-            store.getStream().forEach(this::add);
+            store.forEach(this::add);
         }
     }
 

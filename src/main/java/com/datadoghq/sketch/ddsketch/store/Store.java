@@ -63,7 +63,7 @@ public interface Store {
      * @param store the store to be merged into this one
      */
     default void mergeWith(Store store) {
-        store.getStream().forEach(this::add);
+        store.forEach(this::add);
     }
 
     /**
@@ -170,7 +170,7 @@ public interface Store {
         final com.datadoghq.sketch.ddsketch.proto.Store.Builder storeBuilder =
             com.datadoghq.sketch.ddsketch.proto.Store.newBuilder();
         // In the general case, we use the sparse representation to encode bin counts.
-        getStream().forEach(bin -> storeBuilder.putBinCounts(bin.getIndex(), bin.getCount()));
+        forEach(storeBuilder::putBinCounts);
         return storeBuilder.build();
     }
 
