@@ -5,6 +5,8 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.QUADRATIC;
+
 /**
  * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link LogarithmicMapping}) by
  * extracting the floor value of the logarithm to the base 2 from the binary representations of floating-point values
@@ -51,7 +53,7 @@ public class QuadraticallyInterpolatedMapping extends LogLikeIndexMapping {
     }
 
     @Override
-    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto() {
-        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.QUADRATIC;
+    Interpolation interpolation() {
+        return QUADRATIC;
     }
 }

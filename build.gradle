@@ -12,19 +12,55 @@ repositories {
     mavenCentral()
 }
 
+group = 'com.datadoghq'
+version = '0.5.1-SNAPSHOT'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+sourceSets {
+    protobuf {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+        }
+    }
+    test {
+        java {
+            // make protobuf bindings available to tests
+            compileClasspath += protobuf.output
+            runtimeClasspath += protobuf.output
+        }
+    }
+}
+
+configurations {
+    protobufCompile.extendsFrom compileClasspath
+    protobufRuntime.extendsFrom runtimeClasspath
+}
+
+java {
+    registerFeature('protobuf') {
+        usingSourceSet(sourceSets.protobuf)
+        capability('com.datadoghq', 'protobuf-support', version)
+    }
+}
+
 dependencies {
-    implementation 'com.google.protobuf:protobuf-java:3.13.0'
+    protobufImplementation 'com.google.protobuf:protobuf-java:3.13.0'
+    testImplementation 'com.google.protobuf:protobuf-java:3.13.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     testImplementation 'org.openjdk.jol:jol-core:0.10'
 }
 
-group = 'com.datadoghq'
-version = '0.5.1-SNAPSHOT'
-
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+protobuf {
+    // make it possible to build without protoc installed
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.3.0'
+    }
+}
 
 javadoc {
     options.header = '<script type="text/javascript" id="MathJax-script" async' +
@@ -32,7 +68,6 @@ javadoc {
             '</script>'
     options.addBooleanOption('-allow-script-in-comments', true)
 }
-
 
 jmh {
     jmhVersion = '1.26'

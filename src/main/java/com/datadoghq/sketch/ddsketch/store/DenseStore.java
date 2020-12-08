@@ -5,6 +5,8 @@
 
 package com.datadoghq.sketch.ddsketch.store;
 
+import com.datadoghq.sketch.ddsketch.Serializer;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -322,16 +324,19 @@ public abstract class DenseStore implements Store {
     }
 
     @Override
-    public com.datadoghq.sketch.ddsketch.proto.Store toProto() {
-        final com.datadoghq.sketch.ddsketch.proto.Store.Builder builder =
-            com.datadoghq.sketch.ddsketch.proto.Store.newBuilder();
-        if (counts != null) {
-            // For the dense store, we use the dense representation to encode the bin counts.
-            builder.setContiguousBinIndexOffset(minIndex);
-            for (long index = minIndex; index <= maxIndex; index++) {
-                builder.addContiguousBinCounts(counts[(int) index - offset]);
-            }
+    public int serializedSize() {
+        if (!isEmpty()) {
+            return Serializer.sizeOfCompactDoubleArray(2, maxIndex - minIndex + 1)
+                    + Serializer.signedIntFieldSize(3, minIndex);
         }
-        return builder.build();
+        return 0;
+    }
+
+    @Override
+    public void serialize(Serializer serializer) {
+        if (counts != null) {
+            serializer.writeCompactArray(2, counts, minIndex - offset, maxIndex - minIndex + 1);
+            serializer.writeSignedInt32(3, minIndex);
+        }
     }
 }

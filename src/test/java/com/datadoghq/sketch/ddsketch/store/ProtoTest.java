@@ -24,7 +24,7 @@ class ProtoTest {
             .map(entry -> new Bin(entry.getKey(), entry.getValue()))
             .collect(Collectors.toSet());
 
-        final Store store = Store.fromProto(SparseStore::new, proto);
+        final Store store = StoreProtoBinding.fromProto(SparseStore::new, proto);
         final Set<Bin> actualBins = store.getStream().collect(Collectors.toSet());
 
         assertEquals(expectedBins, actualBins);

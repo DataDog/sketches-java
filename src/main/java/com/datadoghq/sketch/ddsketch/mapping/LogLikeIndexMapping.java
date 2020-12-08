@@ -5,7 +5,11 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import com.datadoghq.sketch.ddsketch.Serializer;
+
 import java.util.Objects;
+
+import static com.datadoghq.sketch.ddsketch.Serializer.*;
 
 /**
  * A base class for mappings that are derived from a function that approximates the logarithm, namely {@link #log}.
@@ -120,31 +124,27 @@ abstract class LogLikeIndexMapping implements IndexMapping {
         return Objects.hash(multiplier, normalizedIndexOffset);
     }
 
-    abstract com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation interpolationToProto();
+    abstract Interpolation interpolation();
 
     @Override
-    public com.datadoghq.sketch.ddsketch.proto.IndexMapping toProto() {
-        return com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
-                .setGamma(Math.pow(base(), 1 / multiplier))
-                .setIndexOffset(normalizedIndexOffset + log(1) * multiplier)
-                .setInterpolation(interpolationToProto())
-                .build();
+    public int serializedSize() {
+        return doubleFieldSize(1, gamma())
+                + doubleFieldSize(2, indexOffset())
+                + fieldSize(3, interpolation().ordinal());
     }
 
-    static LogLikeIndexMapping fromProto(com.datadoghq.sketch.ddsketch.proto.IndexMapping proto) {
-        final double gamma = proto.getGamma();
-        final double indexOffset = proto.getIndexOffset();
-        switch (proto.getInterpolation()) {
-            case NONE:
-                return new LogarithmicMapping(gamma, indexOffset);
-            case LINEAR:
-                return new LinearlyInterpolatedMapping(gamma, indexOffset);
-            case QUADRATIC:
-                return new QuadraticallyInterpolatedMapping(gamma, indexOffset);
-            case CUBIC:
-                return new CubicallyInterpolatedMapping(gamma, indexOffset);
-            default:
-                throw new IllegalArgumentException("unrecognized interpolation");
-        }
+    @Override
+    public void serialize(Serializer serializer) {
+        serializer.writeDouble(1, gamma());
+        serializer.writeDouble(2, indexOffset());
+        serializer.writeUnsignedInt32(3, interpolation().ordinal());
+    }
+
+    double gamma() {
+        return Math.pow(base(), 1 / multiplier);
+    }
+
+    double indexOffset() {
+        return normalizedIndexOffset + log(1) * multiplier;
     }
 }
