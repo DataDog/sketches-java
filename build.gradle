@@ -32,6 +32,13 @@ sourceSets {
             runtimeClasspath += protobuf.output
         }
     }
+    jmh {
+        java {
+            // make protobuf bindings available to jmh
+            compileClasspath += protobuf.output
+            runtimeClasspath += protobuf.output
+        }
+    }
 }
 
 configurations {
@@ -42,7 +49,7 @@ configurations {
 java {
     registerFeature('protobuf') {
         usingSourceSet(sourceSets.protobuf)
-        capability('com.datadoghq', 'protobuf-support', version)
+        capability('com.datadoghq', 'sketches-java-proto', version)
     }
 }
 
@@ -71,6 +78,16 @@ javadoc {
 
 jmh {
     jmhVersion = '1.26'
+}
+
+jmhJar {
+    from sourceSets.main.output
+    from sourceSets.protobuf.output
+}
+
+jar {
+    from sourceSets.main.output
+    from sourceSets.protobuf.output
 }
 
 task sourcesJar(type: Jar) {
