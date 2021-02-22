@@ -52,7 +52,24 @@ public class SerializerTest {
     @MethodSource("sketches")
     public void testProtobufSerialization(Supplier<DDSketch> sketchSupplier, Distribution distribution) throws InvalidProtocolBufferException {
         DDSketch sketch = load(sketchSupplier, distribution);
-        ByteBuffer buffer = sketch.serialize();
+        assertEquals(sketch, sketch.serialize());
+        sketch.clear();
+        assertEquals(sketch, sketch.serialize());
+    }
+
+    private void assertEquals(Store expected, Store actual) {
+        Iterator<Bin> expectedIt = expected.getAscendingIterator();
+        Iterator<Bin> actualIt = actual.getAscendingIterator();
+        while (expectedIt.hasNext() && actualIt.hasNext()) {
+            Bin x = expectedIt.next();
+            Bin y = actualIt.next();
+            Assertions.assertEquals(x.getIndex(), y.getIndex(), expected.getClass().getName());
+            Assertions.assertEquals(x.getCount(), y.getCount(), AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+        }
+        assertFalse(expectedIt.hasNext() || actualIt.hasNext());
+    }
+
+    private void assertEquals(DDSketch sketch, ByteBuffer buffer) throws InvalidProtocolBufferException {
         Assertions.assertEquals(DDSketchProtoBinding.toProto(sketch).getSerializedSize(), buffer.remaining());
 
         assertArrayEquals(DDSketchProtoBinding.toProto(sketch).toByteArray(), buffer.array());
@@ -71,18 +88,6 @@ public class SerializerTest {
         if (null != sketch.getNegativeValueStore()) {
             assertEquals(sketch.getNegativeValueStore(), recovered.getNegativeValueStore());
         }
-    }
-
-    private void assertEquals(Store expected, Store actual) {
-        Iterator<Bin> expectedIt = expected.getAscendingIterator();
-        Iterator<Bin> actualIt = actual.getAscendingIterator();
-        while (expectedIt.hasNext() && actualIt.hasNext()) {
-            Bin x = expectedIt.next();
-            Bin y = actualIt.next();
-            Assertions.assertEquals(x.getIndex(), y.getIndex(), expected.getClass().getName());
-            Assertions.assertEquals(x.getCount(), y.getCount(), AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
-        }
-        assertFalse(expectedIt.hasNext() || actualIt.hasNext());
     }
 
     private static DDSketch load(Supplier<DDSketch> sketchSupplier, Distribution distribution) {

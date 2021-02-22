@@ -334,7 +334,7 @@ public abstract class DenseStore implements Store {
 
     @Override
     public void serialize(Serializer serializer) {
-        if (counts != null) {
+        if (!isEmpty()) {
             serializer.writeCompactArray(2, counts, minIndex - offset, maxIndex - minIndex + 1);
             serializer.writeSignedInt32(3, minIndex);
         }
