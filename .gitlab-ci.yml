@@ -1,0 +1,20 @@
+stages:
+  - generate-signing-key
+
+variables:
+  REGISTRY: 486234852809.dkr.ecr.us-east-1.amazonaws.com
+
+create_key:
+  stage: generate-signing-key
+  when: manual
+  tags: [ "runner:docker", "size:large" ]
+  variables:
+    PROJECT_NAME: "sketches-java"
+    EXPORT_TO_KEYSERVER: "true"
+  image: $REGISTRY/ci/agent-key-management-tools/gpg:1
+  script:
+    - /create.sh
+  artifacts:
+    expire_in: 13 mos
+    paths:
+      - ./pubkeys/
