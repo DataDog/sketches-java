@@ -186,17 +186,6 @@ public class DDSketch implements QuantileSketch<DDSketch> {
      * @throws IllegalArgumentException if the value is outside the range that is tracked by the sketch
      */
     @Override
-    public void accept(double value, long count) {
-        accept(value, (double) count);
-    }
-
-    /**
-     * Adds a value to the sketch with a floating-point {@code count}.
-     *
-     * @param value the value to be added
-     * @param count the weight associated with the value to be added
-     * @throws IllegalArgumentException if {@code count} is negative
-     */
     public void accept(double value, double count) {
 
         checkValueTrackable(value);

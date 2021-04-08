@@ -23,13 +23,16 @@ public interface QuantileSketch<QS extends QuantileSketch<QS>> extends DoubleCon
     void accept(double value);
 
     /**
-     * Adds a value to the sketch as many times as specified by {@code count}.
+     * Adds a value to the sketch with a floating-point {@code count}.
+     *
+     * <p>If {@code count} is an integer, calling {@code accept(value, count)} is equivalent to calling
+     * {@code accept(value)} {@code count} times.
      *
      * @param value the value to be added
-     * @param count the number of times the value is to be added
+     * @param count the weight associated with the value to be added
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    void accept(double value, long count);
+    void accept(double value, double count);
 
     /**
      * Merges the other sketch into this one. After this operation, this sketch encodes the values that were added to
