@@ -262,6 +262,21 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     return zeroCount + negativeValueStore.getTotalCount() + positiveValueStore.getTotalCount();
   }
 
+  /**
+   * Returns an approximation of the sum of the values that have been added to the sketch. If the
+   * values that have been added to the sketch all have the same sign, the approximation error has
+   * the relative accuracy guarantees of the {@link IndexMapping} used for this sketch.
+   *
+   * @return an approximation of the sum of the values that have been added to the sketch
+   */
+  @Override
+  public double getSum() {
+    final double[] sum = {0D};
+    negativeValueStore.forEach((index, count) -> sum[0] -= indexMapping.value(index) * count);
+    positiveValueStore.forEach((index, count) -> sum[0] += indexMapping.value(index) * count);
+    return sum[0];
+  }
+
   @Override
   public double getMinValue() {
     if (!negativeValueStore.isEmpty()) {

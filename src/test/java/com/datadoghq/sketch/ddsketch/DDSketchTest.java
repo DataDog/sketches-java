@@ -5,6 +5,7 @@
 
 package com.datadoghq.sketch.ddsketch;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.datadoghq.sketch.QuantileSketchTest;
@@ -14,6 +15,9 @@ import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.OptionalDouble;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -45,20 +49,27 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     final double upperQuantileValue =
         sortedValues[(int) Math.ceil(quantile * (sortedValues.length - 1))];
 
-    final double minExpected =
-        lowerQuantileValue > 0
-            ? lowerQuantileValue * (1 - relativeAccuracy())
-            : lowerQuantileValue * (1 + relativeAccuracy());
+    assertAccurate(lowerQuantileValue, upperQuantileValue, actualQuantileValue);
+  }
 
-    final double maxExpected =
-        upperQuantileValue > 0
-            ? upperQuantileValue * (1 + relativeAccuracy())
-            : upperQuantileValue * (1 - relativeAccuracy());
+  private void assertAccurate(double minExpected, double maxExpected, double actual) {
+    final double relaxedMinExpected =
+        minExpected > 0
+            ? minExpected * (1 - relativeAccuracy())
+            : minExpected * (1 + relativeAccuracy());
+    final double relaxedMaxExpected =
+        maxExpected > 0
+            ? maxExpected * (1 + relativeAccuracy())
+            : maxExpected * (1 - relativeAccuracy());
 
-    if (actualQuantileValue < minExpected - AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR
-        || actualQuantileValue > maxExpected + AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR) {
+    if (actual < relaxedMinExpected - AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR
+        || actual > relaxedMaxExpected + AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR) {
       fail();
     }
+  }
+
+  private void assertAccurate(double expected, double actual) {
+    assertAccurate(expected, expected, actual);
   }
 
   @Test
@@ -163,6 +174,17 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
       testProtoRoundTrip(merged, values, sketch);
     } catch (InvalidProtocolBufferException e) {
       fail(e);
+    }
+    if (Arrays.stream(values).allMatch(value -> value >= 0)
+        || Arrays.stream(values).allMatch(value -> value <= 0)) {
+      assertAccurate(Arrays.stream(values).sum(), sketch.getSum());
+
+      final OptionalDouble expectedAverage = Arrays.stream(values).average();
+      if (expectedAverage.isPresent()) {
+        assertAccurate(expectedAverage.getAsDouble(), sketch.getAverage());
+      } else {
+        assertThrows(NoSuchElementException.class, sketch::getAverage);
+      }
     }
   }
 
