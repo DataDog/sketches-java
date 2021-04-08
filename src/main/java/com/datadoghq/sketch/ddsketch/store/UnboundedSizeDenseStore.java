@@ -7,63 +7,63 @@ package com.datadoghq.sketch.ddsketch.store;
 
 public class UnboundedSizeDenseStore extends DenseStore {
 
-    public UnboundedSizeDenseStore() {
-        super();
+  public UnboundedSizeDenseStore() {
+    super();
+  }
+
+  public UnboundedSizeDenseStore(int arrayLengthGrowthIncrement) {
+    super(arrayLengthGrowthIncrement);
+  }
+
+  public UnboundedSizeDenseStore(int arrayLengthGrowthIncrement, int arrayLengthOverhead) {
+    super(arrayLengthGrowthIncrement, arrayLengthOverhead);
+  }
+
+  private UnboundedSizeDenseStore(UnboundedSizeDenseStore store) {
+    super(store);
+  }
+
+  @Override
+  int normalize(int index) {
+
+    if (index < minIndex || index > maxIndex) {
+      extendRange(index);
     }
 
-    public UnboundedSizeDenseStore(int arrayLengthGrowthIncrement) {
-        super(arrayLengthGrowthIncrement);
+    return index - offset;
+  }
+
+  @Override
+  void adjust(int newMinIndex, int newMaxIndex) {
+    centerCounts(newMinIndex, newMaxIndex);
+  }
+
+  @Override
+  public void mergeWith(Store store) {
+    if (store instanceof UnboundedSizeDenseStore) {
+      mergeWith((UnboundedSizeDenseStore) store);
+    } else {
+      super.mergeWith(store);
+    }
+  }
+
+  private void mergeWith(UnboundedSizeDenseStore store) {
+
+    if (store.isEmpty()) {
+      return;
     }
 
-    public UnboundedSizeDenseStore(int arrayLengthGrowthIncrement, int arrayLengthOverhead) {
-        super(arrayLengthGrowthIncrement, arrayLengthOverhead);
+    if (store.minIndex < minIndex || store.maxIndex > maxIndex) {
+      extendRange(store.minIndex, store.maxIndex);
     }
 
-    private UnboundedSizeDenseStore(UnboundedSizeDenseStore store) {
-        super(store);
+    for (int index = store.minIndex; index <= store.maxIndex; index++) {
+      counts[index - offset] += store.counts[index - store.offset];
     }
+  }
 
-    @Override
-    int normalize(int index) {
-
-        if (index < minIndex || index > maxIndex) {
-            extendRange(index);
-        }
-
-        return index - offset;
-    }
-
-    @Override
-    void adjust(int newMinIndex, int newMaxIndex) {
-        centerCounts(newMinIndex, newMaxIndex);
-    }
-
-    @Override
-    public void mergeWith(Store store) {
-        if (store instanceof UnboundedSizeDenseStore) {
-            mergeWith((UnboundedSizeDenseStore) store);
-        } else {
-            super.mergeWith(store);
-        }
-    }
-
-    private void mergeWith(UnboundedSizeDenseStore store) {
-
-        if (store.isEmpty()) {
-            return;
-        }
-
-        if (store.minIndex < minIndex || store.maxIndex > maxIndex) {
-            extendRange(store.minIndex, store.maxIndex);
-        }
-
-        for (int index = store.minIndex; index <= store.maxIndex; index++) {
-            counts[index - offset] += store.counts[index - store.offset];
-        }
-    }
-
-    @Override
-    public Store copy() {
-        return new UnboundedSizeDenseStore(this);
-    }
+  @Override
+  public Store copy() {
+    return new UnboundedSizeDenseStore(this);
+  }
 }

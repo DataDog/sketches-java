@@ -13,51 +13,50 @@ import java.util.stream.Collectors;
 
 abstract class CollapsingHighestDenseStoreTest extends StoreTest {
 
-    abstract int maxNumBins();
+  abstract int maxNumBins();
 
-    @Override
-    Store newStore() {
-        return new CollapsingHighestDenseStore(maxNumBins());
+  @Override
+  Store newStore() {
+    return new CollapsingHighestDenseStore(maxNumBins());
+  }
+
+  @Override
+  Map<Integer, Double> getCounts(Bin... bins) {
+    final OptionalInt minIndex =
+        Arrays.stream(bins).filter(bin -> bin.getCount() > 0).mapToInt(Bin::getIndex).min();
+    if (!minIndex.isPresent()) {
+      return Collections.emptyMap();
     }
-
-    @Override
-    Map<Integer, Double> getCounts(Bin... bins) {
-        final OptionalInt minIndex = Arrays.stream(bins)
-            .filter(bin -> bin.getCount() > 0)
-            .mapToInt(Bin::getIndex)
-            .min();
-        if (!minIndex.isPresent()) {
-            return Collections.emptyMap();
-        }
-        final int maxStorableIndex = (int) Math.min(Integer.MAX_VALUE, (long) minIndex.getAsInt() + maxNumBins() - 1);
-        return Arrays.stream(bins)
-            .collect(Collectors.groupingBy(
+    final int maxStorableIndex =
+        (int) Math.min(Integer.MAX_VALUE, (long) minIndex.getAsInt() + maxNumBins() - 1);
+    return Arrays.stream(bins)
+        .collect(
+            Collectors.groupingBy(
                 bin -> Math.min(bin.getIndex(), maxStorableIndex),
-                Collectors.summingDouble(Bin::getCount)
-            ));
+                Collectors.summingDouble(Bin::getCount)));
+  }
+
+  static class CollapsingHighestDenseStoreTest1 extends CollapsingHighestDenseStoreTest {
+
+    @Override
+    int maxNumBins() {
+      return 1;
     }
+  }
 
-    static class CollapsingHighestDenseStoreTest1 extends CollapsingHighestDenseStoreTest {
+  static class CollapsingHighestDenseStoreTest20 extends CollapsingHighestDenseStoreTest {
 
-        @Override
-        int maxNumBins() {
-            return 1;
-        }
+    @Override
+    int maxNumBins() {
+      return 20;
     }
+  }
 
-    static class CollapsingHighestDenseStoreTest20 extends CollapsingHighestDenseStoreTest {
+  static class CollapsingHighestDenseStoreTest1000 extends CollapsingHighestDenseStoreTest {
 
-        @Override
-        int maxNumBins() {
-            return 20;
-        }
+    @Override
+    int maxNumBins() {
+      return 1000;
     }
-
-    static class CollapsingHighestDenseStoreTest1000 extends CollapsingHighestDenseStoreTest {
-
-        @Override
-        int maxNumBins() {
-            return 1000;
-        }
-    }
+  }
 }

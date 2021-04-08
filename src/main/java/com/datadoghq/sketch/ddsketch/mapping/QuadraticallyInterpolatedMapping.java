@@ -8,52 +8,51 @@ package com.datadoghq.sketch.ddsketch.mapping;
 import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.QUADRATIC;
 
 /**
- * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link LogarithmicMapping}) by
- * extracting the floor value of the logarithm to the base 2 from the binary representations of floating-point values
- * and quadratically interpolating the logarithm in-between.
+ * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link
+ * LogarithmicMapping}) by extracting the floor value of the logarithm to the base 2 from the binary
+ * representations of floating-point values and quadratically interpolating the logarithm
+ * in-between.
  */
 public class QuadraticallyInterpolatedMapping extends LogLikeIndexMapping {
 
-    private static final double ONE_THIRD = 1.0 / 3.0;
+  private static final double ONE_THIRD = 1.0 / 3.0;
 
-    public QuadraticallyInterpolatedMapping(double relativeAccuracy) {
-        super(relativeAccuracy);
-    }
+  public QuadraticallyInterpolatedMapping(double relativeAccuracy) {
+    super(relativeAccuracy);
+  }
 
-    /**
-     * {@inheritDoc}
-     */
-    QuadraticallyInterpolatedMapping(double gamma, double indexOffset) {
-        super(gamma, indexOffset);
-    }
+  /** {@inheritDoc} */
+  QuadraticallyInterpolatedMapping(double gamma, double indexOffset) {
+    super(gamma, indexOffset);
+  }
 
-    @Override
-    double log(double value) {
-        final long longBits = Double.doubleToRawLongBits(value);
-        final double s = DoubleBitOperationHelper.getSignificandPlusOne(longBits);
-        final double e = DoubleBitOperationHelper.getExponent(longBits);
-        return e - (s - 5) * (s - 1) * ONE_THIRD;
-    }
+  @Override
+  double log(double value) {
+    final long longBits = Double.doubleToRawLongBits(value);
+    final double s = DoubleBitOperationHelper.getSignificandPlusOne(longBits);
+    final double e = DoubleBitOperationHelper.getExponent(longBits);
+    return e - (s - 5) * (s - 1) * ONE_THIRD;
+  }
 
-    @Override
-    double logInverse(double index) {
-        final long exponent = (long) Math.floor(index);
-        final double significandPlusOne = 3 - Math.sqrt(4 - 3 * (index - exponent));
-        return DoubleBitOperationHelper.buildDouble(exponent, significandPlusOne);
-    }
+  @Override
+  double logInverse(double index) {
+    final long exponent = (long) Math.floor(index);
+    final double significandPlusOne = 3 - Math.sqrt(4 - 3 * (index - exponent));
+    return DoubleBitOperationHelper.buildDouble(exponent, significandPlusOne);
+  }
 
-    @Override
-    double base() {
-        return 2;
-    }
+  @Override
+  double base() {
+    return 2;
+  }
 
-    @Override
-    double correctingFactor() {
-        return 3 / (4 * Math.log(2));
-    }
+  @Override
+  double correctingFactor() {
+    return 3 / (4 * Math.log(2));
+  }
 
-    @Override
-    Interpolation interpolation() {
-        return QUADRATIC;
-    }
+  @Override
+  Interpolation interpolation() {
+    return QUADRATIC;
+  }
 }

@@ -7,13 +7,13 @@ package com.datadoghq.sketch.ddsketch.mapping;
 
 class QuadraticallyInterpolatedMappingTest extends LogLikeIndexMappingTest {
 
-    @Override
-    QuadraticallyInterpolatedMapping getMapping(double relativeAccuracy) {
-        return new QuadraticallyInterpolatedMapping(relativeAccuracy);
-    }
+  @Override
+  QuadraticallyInterpolatedMapping getMapping(double relativeAccuracy) {
+    return new QuadraticallyInterpolatedMapping(relativeAccuracy);
+  }
 
-    @Override
-    QuadraticallyInterpolatedMapping getMapping(double gamma, double indexOffset) {
-        return new QuadraticallyInterpolatedMapping(gamma, indexOffset);
-    }
+  @Override
+  QuadraticallyInterpolatedMapping getMapping(double gamma, double indexOffset) {
+    return new QuadraticallyInterpolatedMapping(gamma, indexOffset);
+  }
 }
