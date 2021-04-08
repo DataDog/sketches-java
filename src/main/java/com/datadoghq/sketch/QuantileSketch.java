@@ -5,6 +5,7 @@
 
 package com.datadoghq.sketch;
 
+import java.util.NoSuchElementException;
 import java.util.function.DoubleConsumer;
 
 /**
@@ -63,6 +64,12 @@ public interface QuantileSketch<QS extends QuantileSketch<QS>> extends DoubleCon
   double getCount();
 
   /**
+   * @return the sum of values that have been added to this sketch (specifically, zero if none has
+   *     been added)
+   */
+  double getSum();
+
+  /**
    * @return the minimum value that has been added to this sketch
    * @throws java.util.NoSuchElementException if the sketch is empty
    */
@@ -91,4 +98,16 @@ public interface QuantileSketch<QS extends QuantileSketch<QS>> extends DoubleCon
    * @throws java.util.NoSuchElementException if the sketch is empty
    */
   double[] getValuesAtQuantiles(double[] quantiles);
+
+  /**
+   * @return the arithmetic mean of values that have been added to this sketch
+   * @throws java.util.NoSuchElementException if the sketch is empty
+   */
+  default double getAverage() {
+    final double count = getCount();
+    if (count == 0) {
+      throw new NoSuchElementException();
+    }
+    return getSum() / count;
+  }
 }

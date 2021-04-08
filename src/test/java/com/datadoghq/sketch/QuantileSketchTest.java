@@ -40,6 +40,12 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   }
 
   private void emptySketchAssertions(QS emptySketch) {
+    assertEquals(0, emptySketch.getSum());
+
+    assertEquals(0, emptySketch.getCount());
+
+    assertThrows(NoSuchElementException.class, emptySketch::getAverage);
+
     assertThrows(NoSuchElementException.class, emptySketch::getMinValue);
 
     assertThrows(NoSuchElementException.class, emptySketch::getMaxValue);
