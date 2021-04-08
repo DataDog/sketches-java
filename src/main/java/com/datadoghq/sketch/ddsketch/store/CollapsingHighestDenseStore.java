@@ -7,122 +7,120 @@ package com.datadoghq.sketch.ddsketch.store;
 
 public class CollapsingHighestDenseStore extends CollapsingDenseStore {
 
-    public CollapsingHighestDenseStore(int maxNumBins) {
-        super(maxNumBins);
-    }
+  public CollapsingHighestDenseStore(int maxNumBins) {
+    super(maxNumBins);
+  }
 
-    private CollapsingHighestDenseStore(CollapsingHighestDenseStore store) {
-        super(store);
-    }
+  private CollapsingHighestDenseStore(CollapsingHighestDenseStore store) {
+    super(store);
+  }
 
-    @Override
-    int normalize(int index) {
+  @Override
+  int normalize(int index) {
 
-        if (index > maxIndex) {
-            if (isCollapsed) {
-                return counts.length - 1;
-            } else {
-                extendRange(index);
-                if (isCollapsed) {
-                    return counts.length - 1;
-                }
-            }
-        } else if (index < minIndex) {
-            extendRange(index);
+    if (index > maxIndex) {
+      if (isCollapsed) {
+        return counts.length - 1;
+      } else {
+        extendRange(index);
+        if (isCollapsed) {
+          return counts.length - 1;
         }
-
-        return index - offset;
+      }
+    } else if (index < minIndex) {
+      extendRange(index);
     }
 
-    @Override
-    void adjust(int newMinIndex, int newMaxIndex) {
+    return index - offset;
+  }
 
-        if ((long) newMaxIndex - newMinIndex + 1 > counts.length) {
+  @Override
+  void adjust(int newMinIndex, int newMaxIndex) {
 
-            // The range of indices is too wide, buckets of lowest indices need to be collapsed.
+    if ((long) newMaxIndex - newMinIndex + 1 > counts.length) {
 
-            newMaxIndex = newMinIndex + counts.length - 1;
+      // The range of indices is too wide, buckets of lowest indices need to be collapsed.
 
-            if (newMaxIndex <= minIndex) {
+      newMaxIndex = newMinIndex + counts.length - 1;
 
-                // There will be only one non-empty bucket.
+      if (newMaxIndex <= minIndex) {
 
-                final double totalCount = getTotalCount();
-                resetCounts();
-                offset = newMinIndex;
-                maxIndex = newMaxIndex;
-                counts[counts.length - 1] = totalCount;
+        // There will be only one non-empty bucket.
 
-            } else {
+        final double totalCount = getTotalCount();
+        resetCounts();
+        offset = newMinIndex;
+        maxIndex = newMaxIndex;
+        counts[counts.length - 1] = totalCount;
 
-                final int shift = offset - newMinIndex;
+      } else {
 
-                if (shift > 0) {
+        final int shift = offset - newMinIndex;
 
-                    // Collapse the buckets.
-                    final double collapsedCount = getTotalCount(newMaxIndex + 1, maxIndex);
-                    resetCounts(newMaxIndex + 1, maxIndex);
-                    counts[newMaxIndex - offset] += collapsedCount;
-                    maxIndex = newMaxIndex;
+        if (shift > 0) {
 
-                    // Shift the buckets to make room for newMinIndex.
-                    shiftCounts(shift);
+          // Collapse the buckets.
+          final double collapsedCount = getTotalCount(newMaxIndex + 1, maxIndex);
+          resetCounts(newMaxIndex + 1, maxIndex);
+          counts[newMaxIndex - offset] += collapsedCount;
+          maxIndex = newMaxIndex;
 
-                } else {
-
-                    // Shift the buckets to make room for newMaxIndex.
-                    shiftCounts(shift);
-                    maxIndex = newMaxIndex;
-                }
-            }
-
-            minIndex = newMinIndex;
-
-            isCollapsed = true;
+          // Shift the buckets to make room for newMinIndex.
+          shiftCounts(shift);
 
         } else {
 
-            centerCounts(newMinIndex, newMaxIndex);
-
+          // Shift the buckets to make room for newMaxIndex.
+          shiftCounts(shift);
+          maxIndex = newMaxIndex;
         }
+      }
 
+      minIndex = newMinIndex;
+
+      isCollapsed = true;
+
+    } else {
+
+      centerCounts(newMinIndex, newMaxIndex);
+    }
+  }
+
+  @Override
+  public Store copy() {
+    return new CollapsingHighestDenseStore(this);
+  }
+
+  @Override
+  public void mergeWith(Store store) {
+    if (store instanceof CollapsingHighestDenseStore) {
+      mergeWith((CollapsingHighestDenseStore) store);
+    } else {
+      getAscendingStream().forEachOrdered(this::add);
+    }
+  }
+
+  private void mergeWith(CollapsingHighestDenseStore store) {
+
+    if (store.isEmpty()) {
+      return;
     }
 
-    @Override
-    public Store copy() {
-        return new CollapsingHighestDenseStore(this);
+    if (store.minIndex < minIndex || store.maxIndex > maxIndex) {
+      extendRange(store.minIndex, store.maxIndex);
     }
 
-    @Override
-    public void mergeWith(Store store) {
-        if (store instanceof CollapsingHighestDenseStore) {
-            mergeWith((CollapsingHighestDenseStore) store);
-        } else {
-            getAscendingStream().forEachOrdered(this::add);
-        }
+    int index = store.maxIndex;
+    for (; index > maxIndex && index >= store.minIndex; index--) {
+      counts[counts.length - 1] += store.counts[index - store.offset];
     }
-
-    private void mergeWith(CollapsingHighestDenseStore store) {
-
-        if (store.isEmpty()) {
-            return;
-        }
-
-        if (store.minIndex < minIndex || store.maxIndex > maxIndex) {
-            extendRange(store.minIndex, store.maxIndex);
-        }
-
-        int index = store.maxIndex;
-        for (; index > maxIndex && index >= store.minIndex; index--) {
-            counts[counts.length - 1] += store.counts[index - store.offset];
-        }
-        for (; index > store.minIndex; index--) {
-            counts[index - offset] += store.counts[index - store.offset];
-        }
-        // This is a separate test so that the comparison in the previous loop is strict (>) and handles
-        // store.minIndex = Integer.MIN_VALUE.
-        if (index == store.minIndex) {
-            counts[index - offset] += store.counts[index - store.offset];
-        }
+    for (; index > store.minIndex; index--) {
+      counts[index - offset] += store.counts[index - store.offset];
     }
+    // This is a separate test so that the comparison in the previous loop is strict (>) and handles
+    // store.minIndex = Integer.MIN_VALUE.
+    if (index == store.minIndex) {
+      counts[index - offset] += store.counts[index - store.offset];
+    }
+  }
 }

@@ -7,29 +7,29 @@ package com.datadoghq.sketch.ddsketch.store;
 
 abstract class CollapsingDenseStore extends DenseStore {
 
-    private final int maxNumBins;
+  private final int maxNumBins;
 
-    boolean isCollapsed;
+  boolean isCollapsed;
 
-    CollapsingDenseStore(int maxNumBins) {
-        this.maxNumBins = maxNumBins;
-        this.isCollapsed = false;
-    }
+  CollapsingDenseStore(int maxNumBins) {
+    this.maxNumBins = maxNumBins;
+    this.isCollapsed = false;
+  }
 
-    CollapsingDenseStore(CollapsingDenseStore store) {
-        super(store);
-        this.maxNumBins = store.maxNumBins;
-        this.isCollapsed = store.isCollapsed;
-    }
+  CollapsingDenseStore(CollapsingDenseStore store) {
+    super(store);
+    this.maxNumBins = store.maxNumBins;
+    this.isCollapsed = store.isCollapsed;
+  }
 
-    @Override
-    long getNewLength(int newMinIndex, int newMaxIndex) {
-        return Math.min(super.getNewLength(newMinIndex, newMaxIndex), maxNumBins);
-    }
+  @Override
+  long getNewLength(int newMinIndex, int newMaxIndex) {
+    return Math.min(super.getNewLength(newMinIndex, newMaxIndex), maxNumBins);
+  }
 
-    @Override
-    public void clear() {
-        super.clear();
-        isCollapsed = false;
-    }
+  @Override
+  public void clear() {
+    super.clear();
+    isCollapsed = false;
+  }
 }

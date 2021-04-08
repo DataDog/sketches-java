@@ -8,17 +8,20 @@ package com.datadoghq.sketch.ddsketch.mapping;
 import com.datadoghq.sketch.ddsketch.Serializer;
 
 /**
- * A mapping between {@code double} values and {@code int} values that imposes relative guarantees on the composition
- * of {@link #value} and {@link #index}. Specifically, for any value {@code v} between {@link #minIndexableValue()}
- * and {@link #maxIndexableValue()}, implementations of {@link IndexMapping} must be such that {@code value(index(v))}
- * is close to {@code v} with a relative error that is less than {@link #relativeAccuracy()}.
- * <p>
- * In implementations of {@code IndexMapping}, there generally is a trade-off between the cost of computing the index
- * and the number of indices that are required to cover a given range of values (memory optimality). The most
- * memory-optimal mapping is the {@link LogarithmicMapping}, but it requires the costly evaluation of the logarithm
- * when computing the index. Other mappings can approximate the logarithmic mapping, while being less computationally
- * costly. The following table shows the characteristics of a few implementations of {@code IndexMapping},
- * highlighting the above-mentioned trade-off.
+ * A mapping between {@code double} values and {@code int} values that imposes relative guarantees
+ * on the composition of {@link #value} and {@link #index}. Specifically, for any value {@code v}
+ * between {@link #minIndexableValue()} and {@link #maxIndexableValue()}, implementations of {@link
+ * IndexMapping} must be such that {@code value(index(v))} is close to {@code v} with a relative
+ * error that is less than {@link #relativeAccuracy()}.
+ *
+ * <p>In implementations of {@code IndexMapping}, there generally is a trade-off between the cost of
+ * computing the index and the number of indices that are required to cover a given range of values
+ * (memory optimality). The most memory-optimal mapping is the {@link LogarithmicMapping}, but it
+ * requires the costly evaluation of the logarithm when computing the index. Other mappings can
+ * approximate the logarithmic mapping, while being less computationally costly. The following table
+ * shows the characteristics of a few implementations of {@code IndexMapping}, highlighting the
+ * above-mentioned trade-off.
+ *
  * <table border="1" style="width:100%">
  * <tr>
  * <td>Mapping</td>
@@ -58,25 +61,26 @@ import com.datadoghq.sketch.ddsketch.Serializer;
  * </tr>
  * <caption>Comparison of various implementations of {@code IndexMapping}</caption>
  * </table>
- * <p>
- * {@link CubicallyInterpolatedMapping}, which uses a polynomial of degree 3 to approximate the logarithm is a good
- * compromise as its memory overhead compared to the optimal logarithmic mapping is only 1%, and it is about 3 times
- * faster than the logarithmic mapping. Using a polynomial of higher degree would not yield a significant gain in memory
- * efficiency (less than 1%), while it would degrade its insertion speed to some extent.
+ *
+ * <p>{@link CubicallyInterpolatedMapping}, which uses a polynomial of degree 3 to approximate the
+ * logarithm is a good compromise as its memory overhead compared to the optimal logarithmic mapping
+ * is only 1%, and it is about 3 times faster than the logarithmic mapping. Using a polynomial of
+ * higher degree would not yield a significant gain in memory efficiency (less than 1%), while it
+ * would degrade its insertion speed to some extent.
  */
 public interface IndexMapping {
 
-    int index(double value);
+  int index(double value);
 
-    double value(int index);
+  double value(int index);
 
-    double relativeAccuracy();
+  double relativeAccuracy();
 
-    double minIndexableValue();
+  double minIndexableValue();
 
-    double maxIndexableValue();
+  double maxIndexableValue();
 
-    int serializedSize();
+  int serializedSize();
 
-    void serialize(Serializer serializer);
+  void serialize(Serializer serializer);
 }

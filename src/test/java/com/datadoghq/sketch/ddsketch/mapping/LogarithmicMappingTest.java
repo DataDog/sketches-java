@@ -7,13 +7,13 @@ package com.datadoghq.sketch.ddsketch.mapping;
 
 class LogarithmicMappingTest extends LogLikeIndexMappingTest {
 
-    @Override
-    LogarithmicMapping getMapping(double relativeAccuracy) {
-        return new LogarithmicMapping(relativeAccuracy);
-    }
+  @Override
+  LogarithmicMapping getMapping(double relativeAccuracy) {
+    return new LogarithmicMapping(relativeAccuracy);
+  }
 
-    @Override
-    LogarithmicMapping getMapping(double gamma, double indexOffset) {
-        return new LogarithmicMapping(gamma, indexOffset);
-    }
+  @Override
+  LogarithmicMapping getMapping(double gamma, double indexOffset) {
+    return new LogarithmicMapping(gamma, indexOffset);
+  }
 }

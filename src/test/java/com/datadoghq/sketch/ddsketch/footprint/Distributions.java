@@ -9,56 +9,56 @@ import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 public enum Distributions {
-    POINT {
-        @Override
-        protected Distribution create(double... parameters) {
-            return () -> parameters[0];
-        }
-    },
-    UNIFORM {
-        @Override
-        protected Distribution create(double... parameters) {
-            return () -> parameters[0] * ThreadLocalRandom.current().nextDouble();
-        }
-    },
-    NORMAL {
-        @Override
-        protected Distribution create(double... parameters) {
-            return () -> parameters[1] * ThreadLocalRandom.current().nextGaussian() + parameters[0];
-        }
-    },
-    POISSON {
-        @Override
-        protected Distribution create(double... parameters) {
-            return () -> -(Math.log(ThreadLocalRandom.current().nextDouble()) / parameters[0]);
-        }
-    };
+  POINT {
+    @Override
+    protected Distribution create(double... parameters) {
+      return () -> parameters[0];
+    }
+  },
+  UNIFORM {
+    @Override
+    protected Distribution create(double... parameters) {
+      return () -> parameters[0] * ThreadLocalRandom.current().nextDouble();
+    }
+  },
+  NORMAL {
+    @Override
+    protected Distribution create(double... parameters) {
+      return () -> parameters[1] * ThreadLocalRandom.current().nextGaussian() + parameters[0];
+    }
+  },
+  POISSON {
+    @Override
+    protected Distribution create(double... parameters) {
+      return () -> -(Math.log(ThreadLocalRandom.current().nextDouble()) / parameters[0]);
+    }
+  };
 
-    private static final class NamedDistribution implements Distribution {
-        private final Distribution delegate;
-        private final Distributions name;
-        private final double[] params;
+  private static final class NamedDistribution implements Distribution {
+    private final Distribution delegate;
+    private final Distributions name;
+    private final double[] params;
 
-        private NamedDistribution(Distribution delegate, Distributions name, double[] params) {
-            this.delegate = delegate;
-            this.name = name;
-            this.params = params;
-        }
-
-        @Override
-        public String toString() {
-            return name + Arrays.toString(params);
-        }
-
-        @Override
-        public double nextValue() {
-            return delegate.nextValue();
-        }
+    private NamedDistribution(Distribution delegate, Distributions name, double[] params) {
+      this.delegate = delegate;
+      this.name = name;
+      this.params = params;
     }
 
-    public Distribution of(double... parameters) {
-        return new NamedDistribution(create(parameters), this, parameters);
+    @Override
+    public String toString() {
+      return name + Arrays.toString(params);
     }
 
-    protected abstract Distribution create(double... parameters);
+    @Override
+    public double nextValue() {
+      return delegate.nextValue();
+    }
+  }
+
+  public Distribution of(double... parameters) {
+    return new NamedDistribution(create(parameters), this, parameters);
+  }
+
+  protected abstract Distribution create(double... parameters);
 }
