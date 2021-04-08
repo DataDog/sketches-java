@@ -1,6 +1,6 @@
 # sketches-java
 
-This repo contains Java implementations of the distributed quantile sketch algorithms `DDSketch` [1] and `GKArray` [2]. Both sketches are mergeable, meaning that multiple sketches from distributed systems can be combined in a central node.
+This repo contains Java implementations of the distributed quantile sketch algorithm `DDSketch` [1]. DDSketch is mergeable, meaning that multiple sketches from distributed systems can be combined in a central node.
 
 # Quick start guide
 
@@ -40,12 +40,5 @@ The size of the sketch can be upper-bounded by using collapsing stores. For inst
 
 The memory size of the sketch depends on the range that is covered by the input values: the larger that range, the more bins are needed to keep track of the input values. As a rough estimate, if working on durations using `DDSketches.unboundedDense(0.02)` (relative accuracy of 2%), about 2kB (275 bins) are needed to cover values between 1 millisecond and 1 minute, and about 6kB (802 bins) to cover values between 1 nanosecond and 1 day. The number of bins that are maintained can be upper-bounded using collapsing stores (see for example `DDSketches.collapsingLowestDense()` and `DDSketches.collapsingHighestDense()`).
 
-# GKArray
-
-GKArray is a sketch with rank error guarantees. Refer to [2] for more details.
-
 # References
 [1] Charles Masson, Jee E. Rim and Homin K. Lee. DDSketch: A Fast and Fully-Mergeable Quantile Sketch with Relative-Error Guarantees. 2019.
-
-[2] Michael B. Greenwald and Sanjeev Khanna. Space-efficient online computation of quantile summaries. In Proc. 2001 ACM
-SIGMOD International Conference on Management of Data, SIGMOD ’01, pages 58–66. ACM, 2001.
