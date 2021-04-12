@@ -5,7 +5,6 @@
 
 package com.datadoghq.sketch.ddsketch;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.datadoghq.sketch.QuantileSketchTest;
@@ -16,8 +15,6 @@ import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.OptionalDouble;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -41,7 +38,7 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
   }
 
   @Override
-  protected void assertAccurate(
+  protected void assertQuantileAccurate(
       boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
 
     final double lowerQuantileValue =
@@ -50,6 +47,32 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
         sortedValues[(int) Math.ceil(quantile * (sortedValues.length - 1))];
 
     assertAccurate(lowerQuantileValue, upperQuantileValue, actualQuantileValue);
+  }
+
+  @Override
+  protected void assertMinAccurate(double[] sortedValues, double actualMinValue) {
+    assertAccurate(sortedValues[0], actualMinValue);
+  }
+
+  @Override
+  protected void assertMaxAccurate(double[] sortedValues, double actualMaxValue) {
+    assertAccurate(sortedValues[sortedValues.length - 1], actualMaxValue);
+  }
+
+  @Override
+  protected void assertSumAccurate(double[] sortedValues, double actualSumValue) {
+    // The sum is accurate if the values that have been added to the sketch have same sign.
+    if (sortedValues[0] >= 0 || sortedValues[sortedValues.length - 1] <= 0) {
+      assertAccurate(Arrays.stream(sortedValues).sum(), actualSumValue);
+    }
+  }
+
+  @Override
+  protected void assertAverageAccurate(double[] sortedValues, double actualAverageValue) {
+    // The average is accurate if the values that have been added to the sketch have same sign.
+    if (sortedValues[0] >= 0 || sortedValues[sortedValues.length - 1] <= 0) {
+      assertAccurate(Arrays.stream(sortedValues).average().getAsDouble(), actualAverageValue);
+    }
   }
 
   private void assertAccurate(double minExpected, double maxExpected, double actual) {
@@ -174,17 +197,6 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
       testProtoRoundTrip(merged, values, sketch);
     } catch (InvalidProtocolBufferException e) {
       fail(e);
-    }
-    if (Arrays.stream(values).allMatch(value -> value >= 0)
-        || Arrays.stream(values).allMatch(value -> value <= 0)) {
-      assertAccurate(Arrays.stream(values).sum(), sketch.getSum());
-
-      final OptionalDouble expectedAverage = Arrays.stream(values).average();
-      if (expectedAverage.isPresent()) {
-        assertAccurate(expectedAverage.getAsDouble(), sketch.getAverage());
-      } else {
-        assertThrows(NoSuchElementException.class, sketch::getAverage);
-      }
     }
   }
 
