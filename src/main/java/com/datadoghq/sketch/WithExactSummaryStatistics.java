@@ -21,6 +21,8 @@ public class WithExactSummaryStatistics<QS extends QuantileSketch<QS>>
   private double count;
   private double sum;
   // Similar to DoubleSummaryStatistics
+  // We use a compensated sum to avoid accumulating rounding errors.
+  // See https://en.wikipedia.org/wiki/Kahan_summation_algorithm.
   private double sumCompensation; // Low order bits of sum
   private double simpleSum; // Used to compute right sum for non-finite inputs
   private double min;
