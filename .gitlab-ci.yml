@@ -1,0 +1,55 @@
+stages:
+  - deploy
+  - generate-signing-key
+
+variables:
+  REGISTRY: 486234852809.dkr.ecr.us-east-1.amazonaws.com
+
+deploy_to_sonatype:
+  stage: deploy
+  rules:
+    # All releases are manual
+    - when: manual
+      allow_failure: true
+  tags: ["runner:docker", "size:large"]
+  image: gradle:6.8.3-jdk8
+  script:
+    # Ensure we don't print commands being run to the logs during credential operations
+    - set +x
+
+    - echo "Installing AWSCLI..."
+    - apt update
+    - apt install -y python3 python3-pip
+    - python3 -m pip install awscli
+
+    - echo "Fetching Sonatype username..."
+    - export SONATYPE_USERNAME=$(aws ssm get-parameter --region us-east-1 --name ci.sketches-java.publishing.sonatype_username --with-decryption --query "Parameter.Value" --out text)
+
+    - echo "Fetching Sonatype password..."
+    - export SONATYPE_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.sketches-java.publishing.sonatype_password --with-decryption --query "Parameter.Value" --out text)
+
+    - echo "Fetching signing key..."
+    - export GPG_PRIVATE_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.sketches-java.signing.gpg_private_key --with-decryption --query "Parameter.Value" --out text)
+
+    - echo "Fetching signing key passphrase..."
+    - export GPG_PASSPHRASE=$(aws ssm get-parameter --region us-east-1 --name ci.sketches-java.signing.gpg_passphrase --with-decryption --query "Parameter.Value" --out text)
+
+    - set -x
+
+    - echo "Building and publishing release..."
+    - ./gradlew -PbuildInfo.build.number=$CI_JOB_ID publishToSonatype closeSonatypeStagingRepository --max-workers=1 --build-cache --stacktrace --no-daemon
+
+create_key:
+  stage: generate-signing-key
+  when: manual
+  tags: [ "runner:docker", "size:large" ]
+  variables:
+    PROJECT_NAME: "sketches-java"
+    EXPORT_TO_KEYSERVER: "true"
+  image: $REGISTRY/ci/agent-key-management-tools/gpg:1
+  script:
+    - /create.sh
+  artifacts:
+    expire_in: 13 mos
+    paths:
+      - ./pubkeys/
