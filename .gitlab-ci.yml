@@ -6,21 +6,26 @@ stages:
 variables:
   REGISTRY: 486234852809.dkr.ecr.us-east-1.amazonaws.com
 
-build:
-  stage: build
+.common: &common
   tags: ["runner:docker", "size:large"]
-  image: gradle:6.8.3-jdk8
+
+.gradle_build: &gradle_build
+  <<: *common
+  image: gradle:7.0.0-jdk8
+
+build:
+  <<: *gradle_build
+  stage: build
   script:
     - ./gradlew clean build --stacktrace --no-daemon
 
 deploy_to_sonatype:
+  <<: *gradle_build
   stage: deploy
   rules:
     # All releases are manual
     - when: manual
       allow_failure: true
-  tags: ["runner:docker", "size:large"]
-  image: gradle:6.8.3-jdk8
   script:
     # Ensure we don't print commands being run to the logs during credential operations
     - set +x
@@ -48,9 +53,9 @@ deploy_to_sonatype:
     - ./gradlew -PbuildInfo.build.number=$CI_JOB_ID publishToSonatype closeSonatypeStagingRepository --max-workers=1 --build-cache --stacktrace --no-daemon
 
 create_key:
+  <<: *common
   stage: generate-signing-key
   when: manual
-  tags: [ "runner:docker", "size:large" ]
   variables:
     PROJECT_NAME: "sketches-java"
     EXPORT_TO_KEYSERVER: "true"
