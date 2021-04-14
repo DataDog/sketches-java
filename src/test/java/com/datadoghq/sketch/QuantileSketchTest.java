@@ -24,8 +24,16 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
 
   protected abstract QS newSketch();
 
-  protected abstract void assertAccurate(
+  protected abstract void assertQuantileAccurate(
       boolean merged, double[] sortedValues, double quantile, double actualQuantileValue);
+
+  protected abstract void assertMinAccurate(double[] sortedValues, double actualMinValue);
+
+  protected abstract void assertMaxAccurate(double[] sortedValues, double actualMaxValue);
+
+  protected abstract void assertSumAccurate(double[] sortedValues, double actualSumValue);
+
+  protected abstract void assertAverageAccurate(double[] sortedValues, double actualAverageValue);
 
   @Test
   protected void throwsExceptionWhenExpected() {
@@ -97,14 +105,31 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
       assertFalse(sketch.isEmpty());
       final double[] sortedValues = Arrays.copyOf(values, values.length);
       Arrays.sort(sortedValues);
-      assertAccurate(merged, sortedValues, 0, sketch.getMinValue());
-      assertAccurate(merged, sortedValues, 1, sketch.getMaxValue());
+
+      final double minValue = sketch.getMinValue();
+      final double maxValue = sketch.getMaxValue();
+
+      assertMinAccurate(sortedValues, minValue);
+      assertMaxAccurate(sortedValues, maxValue);
+
       for (double quantile = 0; quantile <= 1; quantile += 0.01) {
-        assertAccurate(merged, sortedValues, quantile, sketch.getValueAtQuantile(quantile));
-        final double[] quantileValues = sketch.getValuesAtQuantiles(new double[] {quantile});
-        assertEquals(quantileValues.length, 1);
-        assertAccurate(merged, sortedValues, quantile, quantileValues[0]);
+        final double valueAtQuantile = sketch.getValueAtQuantile(quantile);
+        assertQuantileAccurate(merged, sortedValues, quantile, valueAtQuantile);
+
+        // For consistency, we require any value to between the min and the max value that are
+        // returned by the sketch.
+        assertTrue(valueAtQuantile >= minValue);
+        assertTrue(valueAtQuantile <= maxValue);
+
+        final double[] valuesAtQuantiles = sketch.getValuesAtQuantiles(new double[] {quantile});
+        assertEquals(valuesAtQuantiles.length, 1);
+        assertEquals(valueAtQuantile, valuesAtQuantiles[0]);
       }
+
+      assertSumAccurate(values, sketch.getSum());
+      assertAverageAccurate(values, sketch.getAverage());
+
+      assertEquals(values.length, sketch.getCount());
     }
   }
 
