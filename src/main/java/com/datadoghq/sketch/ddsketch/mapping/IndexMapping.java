@@ -31,33 +31,33 @@ import com.datadoghq.sketch.ddsketch.Serializer;
  * </tr>
  * <tr>
  * <td>{@link LogarithmicMapping}</td>
- * <td>0% (optimal)</td>
- * <td>0% (optimal)</td>
- * <td>100% (reference)</td>
+ * <td>\(0\%\) (optimal)</td>
+ * <td>\(0\%\) (optimal)</td>
+ * <td>\(100\%\) (reference)</td>
  * </tr>
  * <tr>
  * <td>{@link CubicallyInterpolatedMapping}</td>
- * <td>~1% ({@code 7/(10*log(2))-1})</td>
- * <td>~1% ({@code 7/(10*log(2))-1})</td>
- * <td>~30%</td>
+ * <td>\(\frac{7}{10\log2}-1 \approx 1.0\%\)</td>
+ * <td>\(\frac{7}{10\log2}-1 \approx 1.0\%\)</td>
+ * <td>\(\sim 30\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link QuadraticallyInterpolatedMapping}</td>
- * <td>~8% ({@code 3/(4*log(2))-1})</td>
- * <td>~8% ({@code 3/(4*log(2))-1})</td>
- * <td>~25%</td>
+ * <td>\(\frac{3}{4\log2}-1 \approx 8.2\%\)</td>
+ * <td>\(\frac{3}{4\log2}-1 \approx 8.2\%\)</td>
+ * <td>\(\sim 25\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link LinearlyInterpolatedMapping}</td>
- * <td>~44% ({@code 1/log(2)-1})</td>
- * <td>~44% ({@code 1/log(2)-1})</td>
- * <td>~20%</td>
+ * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
+ * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
+ * <td>\(\sim 20\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link BitwiseLinearlyInterpolatedMapping}</td>
- * <td>~44% ({@code 1/log(2)-1})</td>
- * <td>~189% ({@code 2/log(2)-1})</td>
- * <td>~15%</td>
+ * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
+ * <td>\(\frac{2}{\log2}-1 \approx 189\%\)</td>
+ * <td>\(\sim 15\%\)</td>
  * </tr>
  * <caption>Comparison of various implementations of {@code IndexMapping}</caption>
  * </table>
