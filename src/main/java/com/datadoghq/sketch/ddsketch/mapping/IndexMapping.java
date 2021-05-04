@@ -36,28 +36,34 @@ import com.datadoghq.sketch.ddsketch.Serializer;
  * <td>\(100\%\) (reference)</td>
  * </tr>
  * <tr>
+ * <td>{@link QuarticallyInterpolatedMapping}</td>
+ * <td>\(\frac{25}{36\log2}-1 \approx 0.19\%\)</td>
+ * <td>\(\frac{25}{36\log2}-1 \approx 0.19\%\)</td>
+ * <td>\(\sim 19\%\)</td>
+ * </tr>
+ * <tr>
  * <td>{@link CubicallyInterpolatedMapping}</td>
  * <td>\(\frac{7}{10\log2}-1 \approx 1.0\%\)</td>
  * <td>\(\frac{7}{10\log2}-1 \approx 1.0\%\)</td>
- * <td>\(\sim 30\%\)</td>
+ * <td>\(\sim 16\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link QuadraticallyInterpolatedMapping}</td>
  * <td>\(\frac{3}{4\log2}-1 \approx 8.2\%\)</td>
  * <td>\(\frac{3}{4\log2}-1 \approx 8.2\%\)</td>
- * <td>\(\sim 25\%\)</td>
+ * <td>\(\sim 14\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link LinearlyInterpolatedMapping}</td>
  * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
  * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
- * <td>\(\sim 20\%\)</td>
+ * <td>\(\sim 12\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link BitwiseLinearlyInterpolatedMapping}</td>
  * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
  * <td>\(\frac{2}{\log2}-1 \approx 189\%\)</td>
- * <td>\(\sim 15\%\)</td>
+ * <td>\(\sim 7\%\)</td>
  * </tr>
  * <caption>Comparison of various implementations of {@code IndexMapping}</caption>
  * </table>

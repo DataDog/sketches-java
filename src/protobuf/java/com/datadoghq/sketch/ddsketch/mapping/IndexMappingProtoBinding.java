@@ -49,6 +49,8 @@ public class IndexMappingProtoBinding {
         return new QuadraticallyInterpolatedMapping(gamma, indexOffset);
       case CUBIC:
         return new CubicallyInterpolatedMapping(gamma, indexOffset);
+      case QUARTIC:
+        return new QuarticallyInterpolatedMapping(gamma, indexOffset);
       default:
         throw new IllegalArgumentException("unrecognized interpolation");
     }
@@ -64,6 +66,8 @@ public class IndexMappingProtoBinding {
         return IndexMapping.Interpolation.QUADRATIC;
       case CUBIC:
         return IndexMapping.Interpolation.CUBIC;
+      case QUARTIC:
+        return IndexMapping.Interpolation.QUARTIC;
       default:
         throw new IllegalArgumentException("unrecognized interpolation");
     }

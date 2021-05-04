@@ -55,6 +55,14 @@ class ProtoTest {
                     com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.CUBIC)
                 .build()),
         Arguments.of(
+            new QuarticallyInterpolatedMapping(1.01, 2),
+            com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
+                .setGamma(1.01)
+                .setIndexOffset(2)
+                .setInterpolation(
+                    com.datadoghq.sketch.ddsketch.proto.IndexMapping.Interpolation.QUARTIC)
+                .build()),
+        Arguments.of(
             new BitwiseLinearlyInterpolatedMapping(1e-2),
             com.datadoghq.sketch.ddsketch.proto.IndexMapping.newBuilder()
                 .setGamma(Math.pow(2, 1.0 / (1 << 6)))
