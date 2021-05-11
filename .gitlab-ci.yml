@@ -11,7 +11,7 @@ variables:
 
 .gradle_build: &gradle_build
   <<: *common
-  image: gradle:7.0.0-jdk8
+  image: registry.ddbuild.io/images/mirror/gradle:7.0.0-jdk8
 
 build:
   <<: *gradle_build
