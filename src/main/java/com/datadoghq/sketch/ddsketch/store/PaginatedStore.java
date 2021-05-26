@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
 public final class PaginatedStore implements Store {
 
   private static final int GROWTH = 8;
-  private static final int PAGE_SIZE = 128;
+  private static final int PAGE_SIZE = 32;
   private static final int PAGE_MASK = PAGE_SIZE - 1;
   private static final int PAGE_SHIFT = Integer.bitCount(PAGE_MASK);
 
