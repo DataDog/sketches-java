@@ -9,5 +9,6 @@ public enum Interpolation {
   NONE,
   LINEAR,
   QUADRATIC,
-  CUBIC
+  CUBIC,
+  QUARTIC
 }

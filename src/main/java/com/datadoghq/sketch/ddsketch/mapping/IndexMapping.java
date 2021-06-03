@@ -31,42 +31,49 @@ import com.datadoghq.sketch.ddsketch.Serializer;
  * </tr>
  * <tr>
  * <td>{@link LogarithmicMapping}</td>
- * <td>0% (optimal)</td>
- * <td>0% (optimal)</td>
- * <td>100% (reference)</td>
+ * <td>\(0\%\) (optimal)</td>
+ * <td>\(0\%\) (optimal)</td>
+ * <td>\(100\%\) (reference)</td>
+ * </tr>
+ * <tr>
+ * <td>{@link QuarticallyInterpolatedMapping}</td>
+ * <td>\(\frac{25}{36\log2}-1 \approx 0.19\%\)</td>
+ * <td>\(\frac{25}{36\log2}-1 \approx 0.19\%\)</td>
+ * <td>\(\sim 19\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link CubicallyInterpolatedMapping}</td>
- * <td>~1% ({@code 7/(10*log(2))-1})</td>
- * <td>~1% ({@code 7/(10*log(2))-1})</td>
- * <td>~30%</td>
+ * <td>\(\frac{7}{10\log2}-1 \approx 1.0\%\)</td>
+ * <td>\(\frac{7}{10\log2}-1 \approx 1.0\%\)</td>
+ * <td>\(\sim 16\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link QuadraticallyInterpolatedMapping}</td>
- * <td>~8% ({@code 3/(4*log(2))-1})</td>
- * <td>~8% ({@code 3/(4*log(2))-1})</td>
- * <td>~25%</td>
+ * <td>\(\frac{3}{4\log2}-1 \approx 8.2\%\)</td>
+ * <td>\(\frac{3}{4\log2}-1 \approx 8.2\%\)</td>
+ * <td>\(\sim 14\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link LinearlyInterpolatedMapping}</td>
- * <td>~44% ({@code 1/log(2)-1})</td>
- * <td>~44% ({@code 1/log(2)-1})</td>
- * <td>~20%</td>
+ * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
+ * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
+ * <td>\(\sim 12\%\)</td>
  * </tr>
  * <tr>
  * <td>{@link BitwiseLinearlyInterpolatedMapping}</td>
- * <td>~44% ({@code 1/log(2)-1})</td>
- * <td>~189% ({@code 2/log(2)-1})</td>
- * <td>~15%</td>
+ * <td>\(\frac{1}{\log2}-1 \approx 44\%\)</td>
+ * <td>\(\frac{2}{\log2}-1 \approx 189\%\)</td>
+ * <td>\(\sim 7\%\)</td>
  * </tr>
  * <caption>Comparison of various implementations of {@code IndexMapping}</caption>
  * </table>
  *
  * <p>{@link CubicallyInterpolatedMapping}, which uses a polynomial of degree 3 to approximate the
- * logarithm is a good compromise as its memory overhead compared to the optimal logarithmic mapping
- * is only 1%, and it is about 3 times faster than the logarithmic mapping. Using a polynomial of
- * higher degree would not yield a significant gain in memory efficiency (less than 1%), while it
- * would degrade its insertion speed to some extent.
+ * logarithm, usually is a good compromise as its memory overhead compared to the optimal
+ * logarithmic mapping is only 1%, and it is about 6 times faster than the logarithmic mapping.
+ * Using a polynomial of higher degree (e.g., {@link QuarticallyInterpolatedMapping}) does not yield
+ * a significant gain in memory space efficiency (less than 1%), while it degrades its insertion
+ * speed to some extent.
  */
 public interface IndexMapping {
 

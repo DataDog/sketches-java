@@ -48,6 +48,7 @@ message IndexMapping {
     LINEAR = 1;
     QUADRATIC = 2;
     CUBIC = 3;
+    QUARTIC = 4;
   }
 }
 

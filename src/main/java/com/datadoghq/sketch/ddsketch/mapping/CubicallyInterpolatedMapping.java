@@ -13,7 +13,7 @@ import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.CUBIC;
  * representations of floating-point values and cubically interpolating the logarithm in-between.
  *
  * <p>Calculating the bucket index with this mapping is much faster than computing the logarithm of
- * the value (by a factor of 3 according to some benchmarks, although it depends on various
+ * the value (by a factor of 6 according to some benchmarks, although it depends on various
  * factors), and this mapping incurs a memory usage overhead of only 1% compared to the
  * memory-optimal {@link LogarithmicMapping}, under the relative accuracy condition. In comparison,
  * the overheads for {@link LinearlyInterpolatedMapping} and {@link
