@@ -69,10 +69,11 @@ import com.datadoghq.sketch.ddsketch.Serializer;
  * </table>
  *
  * <p>{@link CubicallyInterpolatedMapping}, which uses a polynomial of degree 3 to approximate the
- * logarithm is a good compromise as its memory overhead compared to the optimal logarithmic mapping
- * is only 1%, and it is about 3 times faster than the logarithmic mapping. Using a polynomial of
- * higher degree would not yield a significant gain in memory efficiency (less than 1%), while it
- * would degrade its insertion speed to some extent.
+ * logarithm, usually is a good compromise as its memory overhead compared to the optimal
+ * logarithmic mapping is only 1%, and it is about 6 times faster than the logarithmic mapping.
+ * Using a polynomial of higher degree (e.g., {@link QuarticallyInterpolatedMapping}) does not yield
+ * a significant gain in memory space efficiency (less than 1%), while it degrades its insertion
+ * speed to some extent.
  */
 public interface IndexMapping {
 
