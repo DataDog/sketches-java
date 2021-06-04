@@ -5,7 +5,7 @@ plugins {
     id 'signing'
     id 'com.google.protobuf' version '0.8.13'
     id 'idea'
-    id 'me.champeau.gradle.jmh' version '0.5.0'
+    id 'me.champeau.gradle.jmh' version '0.6.5'
     id "com.diffplug.spotless" version "5.11.1"
 }
 
