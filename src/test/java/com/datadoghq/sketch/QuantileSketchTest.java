@@ -5,11 +5,14 @@
 
 package com.datadoghq.sketch;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.offset;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -17,10 +20,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import org.assertj.core.data.Offset;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
+
+  protected static final double EPSILON = AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR;
+  private static final Offset<Double> DOUBLE_OFFSET = offset(EPSILON);
 
   protected abstract QS newSketch();
 
@@ -98,7 +105,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   }
 
   protected final void assertEncodes(boolean merged, double[] values, QS sketch) {
-    assertEquals(values.length, sketch.getCount());
+    assertThat(sketch.getCount()).isCloseTo(values.length, DOUBLE_OFFSET);
     if (values.length == 0) {
       assertTrue(sketch.isEmpty());
     } else {
@@ -128,8 +135,6 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
 
       assertSumAccurate(values, sketch.getSum());
       assertAverageAccurate(values, sketch.getAverage());
-
-      assertEquals(values.length, sketch.getCount());
     }
   }
 
