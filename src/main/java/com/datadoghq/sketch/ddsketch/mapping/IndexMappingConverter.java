@@ -43,10 +43,21 @@ public interface IndexMappingConverter {
    * initial bins are not themselves resulting from a conversion (in which case \(\alpha_i\) needs
    * to be adjusted to be the effective relative accuracy of the initial bins), the effective
    * relative accuracy of the quantiles that are computed from the bins that result from this
-   * conversion method is upper-bounded by \(\alpha = \frac{\gamma-1}{\gamma+1}\) where \(\gamma =
-   * \gamma_i^2\gamma_o\), \(\gamma_i = \frac{1+\alpha_i}{1-\alpha_i}\), and \(\gamma_o =
-   * \frac{1+\alpha_o}{1-\alpha_o}\). If relative accuracies are small, this is approximately
-   * \(\alpha \approx 2\alpha_i+\alpha_o\).
+   * conversion method is upper-bounded by \(\alpha =
+   * \frac{(1+\alpha_i)(1+\alpha_o)}{1-\alpha_i}-1\). If relative accuracies are small, this is
+   * approximately \(\alpha \approx 2\alpha_i+\alpha_o\).
+   *
+   * <p>That is because this conversion method causes an input data point to be spread over the full
+   * width of a bin of the initial mapping, hence a multiplicative shift of up to \(\gamma_i =
+   * \frac{1+\alpha_i}{1-\alpha_i}\) to the right, and down to \(\frac{1}{\gamma_i}\) to the left.
+   * In addition, because of the relative error induced by the new mapping, transferring counts to
+   * the new mapping will cause an additional multiplicative shift of up to \(1+\alpha_o\) to the
+   * right, and down to \(1-\alpha_o\) to the left. Therefore, the resulting relative error is up to
+   * \(\alpha = \gamma_i(1+\alpha_o)-1\) to the right and up to \(\alpha' =
+   * 1-\frac{1-\alpha_o}{\gamma_i}\) to the left. Because \(\alpha-\alpha' =
+   * \frac{1}{\gamma_i}((\gamma_i^2-1)\alpha_o+(\gamma_i-1)^2) \geq 0\) (given that \(\gamma_i \geq
+   * 1\) and \(\alpha_o \geq 0\)), the resulting relative error is upper-bounded by \(\alpha =
+   * \gamma_i(1+\alpha_o)-1 = \frac{(1+\alpha_i)(1+\alpha_o)}{1-\alpha_i}-1\).
    *
    * @return a converter that uniformly distributes the count of a bin to the overlapping bins of
    *     the new mapping depending on the shares of the initial bin that the new bins cover
