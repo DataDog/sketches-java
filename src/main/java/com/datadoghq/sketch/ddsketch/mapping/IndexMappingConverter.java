@@ -86,6 +86,8 @@ public interface IndexMappingConverter {
         }
         outIndex = newOutIndex;
 
+        // Allocate shares of the count of the current input bin to the overlapping bins of the
+        // output mapping whose upper bounds are still within the input bin.
         double outUpperBound;
         while ((outUpperBound = outMapping.upperBound(outIndex)) < inUpperBound) {
           outCount += inBin.getCount() * (outUpperBound - value) / (inUpperBound - inLowerBound);
@@ -96,9 +98,14 @@ public interface IndexMappingConverter {
           }
           outIndex++;
         }
+        // Allocate the remaining of the count of the current input bin to the rightmost overlapping
+        // bin. Do not transfer it to outBins just yet as other input bins may also overlap the
+        // output bin of index outIndex (we want to forward the whole resulting count at once).
         outCount += inBin.getCount() * (inUpperBound - value) / (inUpperBound - inLowerBound);
       }
 
+      // No other input bin overlaps the output bin of index outIndex. Forward its count to
+      // outBins.
       if (outCount != 0) {
         outBins.accept(outIndex, outCount);
       }
