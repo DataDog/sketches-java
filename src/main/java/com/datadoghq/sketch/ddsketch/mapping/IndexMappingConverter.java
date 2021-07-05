@@ -59,6 +59,25 @@ public interface IndexMappingConverter {
    * 1\) and \(\alpha_o \geq 0\)), the resulting relative error is upper-bounded by \(\alpha =
    * \gamma_i(1+\alpha_o)-1 = \frac{(1+\alpha_i)(1+\alpha_o)}{1-\alpha_i}-1\).
    *
+   * <p>In other words, this conversion method causes a single point to be spread over the full
+   * width of a bin of the initial mapping, inducing a relative error up to approximately
+   * \(2\alpha_i\). In addition, the allocation of counts to the bins of the new mapping causes a
+   * relative error that is up to approximately \(\alpha_o\). Informally, here is what can happen in
+   * the worst case:
+   *
+   * <pre>
+   * single input value:                                      x
+   * initial mapping:                       -|-------o-------|-------o-------|-------o-------|
+   * max (q_1) after bin encoding (1):                               x
+   * count spreading over full bin (2):                      [---------------]
+   * new mapping:                           |---o---|---o---|---o---|---o---|---o---|---o---|-
+   * non-empty bins after conversion (3):                       o       o       o
+   * max after conversion:                                                      x
+   * </pre>
+   *
+   * The resulting value at quantile \(1\) (i.e., the maximum value) is shifted by \(\alpha_i\)
+   * because of (1), an additional \(\alpha_i\) because of (2) and \(\alpha_o\) because of (3).
+   *
    * @return a converter that uniformly distributes the count of a bin to the overlapping bins of
    *     the new mapping depending on the shares of the initial bin that the new bins cover
    */
