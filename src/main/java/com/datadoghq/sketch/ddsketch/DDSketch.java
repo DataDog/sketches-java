@@ -11,6 +11,7 @@ import static com.datadoghq.sketch.ddsketch.Serializer.embeddedFieldSize;
 import com.datadoghq.sketch.QuantileSketch;
 import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
+import com.datadoghq.sketch.ddsketch.mapping.IndexMappingConverter;
 import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.Bin;
 import com.datadoghq.sketch.ddsketch.store.CollapsingHighestDenseStore;
@@ -345,6 +346,34 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     }
 
     throw new NoSuchElementException();
+  }
+
+  /**
+   * Builds a new {@code DDSketch} that encodes the content of this sketch with the specified index
+   * mapping and the specified stores. This {@code DDSketch} is not modified by the operation.
+   *
+   * <p>Note that this conversion degrades the accuracy of the new sketch to the extent that it is
+   * not necessarily upper-bounded by the accuracy of the provided index mapping. See {@link
+   * IndexMappingConverter#distributingUniformly(IndexMapping, IndexMapping)} for details.
+   *
+   * @param newIndexMapping the index mapping that the new sketch should use to map values to bins
+   * @param storeSupplier a constructor of an initially empty store to be used to encode bins
+   * @return a new {@code DDSketch}
+   */
+  public DDSketch convert(IndexMapping newIndexMapping, Supplier<Store> storeSupplier) {
+    final IndexMappingConverter indexMappingConverter =
+        IndexMappingConverter.distributingUniformly(indexMapping, newIndexMapping);
+
+    final Store newNegativeValueStore = storeSupplier.get();
+    indexMappingConverter.convertAscendingIterator(
+        negativeValueStore.getAscendingIterator(), newNegativeValueStore::add);
+
+    final Store newPositiveValueStore = storeSupplier.get();
+    indexMappingConverter.convertAscendingIterator(
+        positiveValueStore.getAscendingIterator(), newPositiveValueStore::add);
+
+    return new DDSketch(
+        newIndexMapping, newNegativeValueStore, newPositiveValueStore, zeroCount, minIndexedValue);
   }
 
   /** @return the size of the sketch when serialized in protobuf */

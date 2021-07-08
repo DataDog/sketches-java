@@ -52,4 +52,9 @@ public final class Bin {
   public int hashCode() {
     return Objects.hash(index, count);
   }
+
+  @Override
+  public String toString() {
+    return "Bin{index=" + index + ", count=" + count + '}';
+  }
 }

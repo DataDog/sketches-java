@@ -32,7 +32,7 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     this(getMinNumSignificantBinaryDigits(relativeAccuracy));
   }
 
-  private BitwiseLinearlyInterpolatedMapping(int numSignificantBinaryDigits) {
+  BitwiseLinearlyInterpolatedMapping(int numSignificantBinaryDigits) {
     if (numSignificantBinaryDigits < 0) {
       throw new IllegalArgumentException(
           "The number of significant binary digits cannot be negative.");
@@ -70,10 +70,19 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
 
   @Override
   public double value(int index) {
+    return lowerBound(index) * (1 + relativeAccuracy);
+  }
+
+  @Override
+  public double lowerBound(int index) {
     final int exponent = Math.floorDiv(index, multiplier);
     return DoubleBitOperationHelper.buildDouble(
-            exponent, 1 - exponent + (double) index / multiplier)
-        * (1 + relativeAccuracy);
+        exponent, 1 - exponent + (double) index / multiplier);
+  }
+
+  @Override
+  public double upperBound(int index) {
+    return lowerBound(index + 1);
   }
 
   @Override

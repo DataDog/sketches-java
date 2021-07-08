@@ -8,11 +8,25 @@ package com.datadoghq.sketch.ddsketch.mapping;
 import com.datadoghq.sketch.ddsketch.Serializer;
 
 /**
- * A mapping between {@code double} values and {@code int} values that imposes relative guarantees
- * on the composition of {@link #value} and {@link #index}. Specifically, for any value {@code v}
- * between {@link #minIndexableValue()} and {@link #maxIndexableValue()}, implementations of {@link
- * IndexMapping} must be such that {@code value(index(v))} is close to {@code v} with a relative
- * error that is less than {@link #relativeAccuracy()}.
+ * A mapping between {@code double} positive values and {@code int} values that imposes relative
+ * guarantees on the composition of {@link #value} and {@link #index}. Specifically, for any value
+ * {@code v} between {@link #minIndexableValue()} and {@link #maxIndexableValue()}, implementations
+ * of {@link IndexMapping} must be such that {@code value(index(v))} is close to {@code v} with a
+ * relative error that is less than {@link #relativeAccuracy()}.
+ *
+ * <p>In addition, {@link #index} is required to be increasing, and mappings provide additional
+ * methods {@link #lowerBound} and {@link #upperBound} that are such that for any valid {@code
+ * index},
+ *
+ * <ul>
+ *   <li>{@code lowerBound(index) <= value(index) <= upperBound(index)},
+ *   <li>{@code lowerBound(index + 1) == upperBound(index)} if {@code index + 1} is a valid index,
+ *   <li>if {@code value} is such that {@code lowerBound(index) < value < upperBound(index)}, then
+ *       {@code index(value) == index}.
+ * </ul>
+ *
+ * In other words, an {@code IndexMapping} defines indexed contiguous buckets whose bounds are
+ * provided by {@link #lowerBound} and {@link #upperBound}.
  *
  * <p>In implementations of {@code IndexMapping}, there generally is a trade-off between the cost of
  * computing the index and the number of indices that are required to cover a given range of values
@@ -80,6 +94,10 @@ public interface IndexMapping {
   int index(double value);
 
   double value(int index);
+
+  double lowerBound(int index);
+
+  double upperBound(int index);
 
   double relativeAccuracy();
 

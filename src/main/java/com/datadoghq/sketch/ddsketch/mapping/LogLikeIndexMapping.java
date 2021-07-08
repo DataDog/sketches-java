@@ -81,7 +81,17 @@ abstract class LogLikeIndexMapping implements IndexMapping {
 
   @Override
   public final double value(int index) {
-    return logInverse((index - normalizedIndexOffset) / multiplier) * (1 + relativeAccuracy);
+    return lowerBound(index) * (1 + relativeAccuracy);
+  }
+
+  @Override
+  public double lowerBound(int index) {
+    return logInverse((index - normalizedIndexOffset) / multiplier);
+  }
+
+  @Override
+  public double upperBound(int index) {
+    return lowerBound(index + 1);
   }
 
   @Override
