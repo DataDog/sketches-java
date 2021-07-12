@@ -5,21 +5,25 @@
 
 package com.datadoghq.sketch.ddsketch;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 public enum Distributions {
   NORMAL {
     @Override
     protected Distribution create(double... parameters) {
-      return () -> parameters[1] * ThreadLocalRandom.current().nextGaussian() + parameters[0];
+      final Random random = new Random(seed);
+      return () -> parameters[1] * random.nextGaussian() + parameters[0];
     }
   },
   POISSON {
     @Override
     protected Distribution create(double... parameters) {
-      return () -> -(Math.log(ThreadLocalRandom.current().nextDouble()) / parameters[0]);
+      final Random random = new Random(seed);
+      return () -> -(Math.log(random.nextDouble()) / parameters[0]);
     }
   };
+
+  private static final long seed = 5388928120325255124L;
 
   public Distribution of(double... parameters) {
     return create(parameters);

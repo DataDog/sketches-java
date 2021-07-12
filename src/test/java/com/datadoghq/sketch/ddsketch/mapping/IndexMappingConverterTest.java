@@ -5,9 +5,10 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import static com.datadoghq.sketch.ddsketch.TestHelper.BIN_COMPARISON_CONFIG;
+import static com.datadoghq.sketch.ddsketch.TestHelper.product;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.datadoghq.sketch.ddsketch.store.Bin;
 import com.datadoghq.sketch.ddsketch.store.BinAcceptor;
@@ -19,9 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.assertj.core.data.Offset;
-import org.assertj.core.util.DoubleComparator;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,12 +29,6 @@ public class IndexMappingConverterTest {
 
   private static final Offset<Double> DOUBLE_OFFSET =
       offset(AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
-  private static final RecursiveComparisonConfiguration BIN_COMPARISON_CONFIG =
-      RecursiveComparisonConfiguration.builder()
-          .withIgnoredOverriddenEqualsForTypes(Bin.class)
-          .withComparatorForType(
-              new DoubleComparator(AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR), Double.class)
-          .build();
 
   private static BinAcceptor listAdder(List<Bin> binList) {
     return (index, value) -> binList.add(new Bin(index, value));
@@ -145,27 +138,5 @@ public class IndexMappingConverterTest {
                 new Bin(2, 65),
                 new Bin(3, 5.43)))
         .map(Arguments::arguments);
-  }
-
-  private static Stream<Arguments> product(List<Stream<Arguments>> streams) {
-    if (streams.isEmpty()) {
-      return Stream.of(arguments());
-    }
-    final List<Arguments> firstArguments = streams.get(0).collect(Collectors.toList());
-    return product(streams.subList(1, streams.size()))
-        .flatMap(
-            other ->
-                firstArguments.stream()
-                    .map(
-                        first ->
-                            arguments(
-                                Stream.concat(
-                                        Arrays.stream(first.get()), Arrays.stream(other.get()))
-                                    .toArray())));
-  }
-
-  @SafeVarargs
-  private static Stream<Arguments> product(Stream<Arguments>... streams) {
-    return product(Arrays.asList(streams));
   }
 }

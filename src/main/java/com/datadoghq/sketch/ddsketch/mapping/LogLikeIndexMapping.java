@@ -8,6 +8,9 @@ package com.datadoghq.sketch.ddsketch.mapping;
 import static com.datadoghq.sketch.ddsketch.Serializer.*;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -137,6 +140,15 @@ abstract class LogLikeIndexMapping implements IndexMapping {
   @Override
   public int hashCode() {
     return Objects.hash(multiplier, normalizedIndexOffset);
+  }
+
+  abstract IndexMappingLayout layout();
+
+  @Override
+  public void encode(Output output) throws IOException {
+    layout().toFlag().encode(output);
+    output.writeDoubleLE(gamma());
+    output.writeDoubleLE(indexOffset());
   }
 
   abstract Interpolation interpolation();

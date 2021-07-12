@@ -8,6 +8,12 @@ package com.datadoghq.sketch.ddsketch.store;
 import static com.datadoghq.sketch.ddsketch.Serializer.sizeOfBin;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.BinEncodingMode;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import com.datadoghq.sketch.ddsketch.encoding.VarEncodingHelper;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterators;
@@ -156,6 +162,48 @@ public interface Store {
    */
   // Needed because of JDK-8194952
   Iterator<Bin> getDescendingIterator();
+
+  void encode(Output output, Flag.Type storeFlagType) throws IOException;
+
+  default void decodeAndMergeWith(Input input, BinEncodingMode encodingMode) throws IOException {
+    switch (encodingMode) {
+      case INDEX_DELTAS_AND_COUNTS:
+        {
+          final long numBins = VarEncodingHelper.decodeUnsignedVarLong(input);
+          long index = 0;
+          for (long i = 0; i != numBins; i++) {
+            final long indexDelta = VarEncodingHelper.decodeSignedVarLong(input);
+            final double count = VarEncodingHelper.decodeVarDouble(input);
+            index += indexDelta;
+            add(Math.toIntExact(index), count);
+          }
+        }
+        break;
+      case INDEX_DELTAS:
+        {
+          final long numBins = VarEncodingHelper.decodeUnsignedVarLong(input);
+          long index = 0;
+          for (long i = 0; i != numBins; i++) {
+            final long indexDelta = VarEncodingHelper.decodeSignedVarLong(input);
+            index += indexDelta;
+            add(Math.toIntExact(index));
+          }
+        }
+        break;
+      case CONTIGUOUS_COUNTS:
+        {
+          final long numBins = VarEncodingHelper.decodeUnsignedVarLong(input);
+          long index = VarEncodingHelper.decodeSignedVarLong(input);
+          for (long i = 0; i != numBins; i++, index++) {
+            final double count = VarEncodingHelper.decodeVarDouble(input);
+            add(Math.toIntExact(index), count);
+          }
+        }
+        break;
+      default:
+        throw new IllegalStateException("The bin encoding mode is not handled.");
+    }
+  }
 
   default int serializedSize() {
     int[] size = {0};

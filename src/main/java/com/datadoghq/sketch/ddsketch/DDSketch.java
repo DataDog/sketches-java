@@ -9,6 +9,13 @@ import static com.datadoghq.sketch.ddsketch.Serializer.doubleFieldSize;
 import static com.datadoghq.sketch.ddsketch.Serializer.embeddedFieldSize;
 
 import com.datadoghq.sketch.QuantileSketch;
+import com.datadoghq.sketch.ddsketch.encoding.BinEncodingMode;
+import com.datadoghq.sketch.ddsketch.encoding.MalformedInputException;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import com.datadoghq.sketch.ddsketch.encoding.VarEncodingHelper;
 import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMappingConverter;
@@ -18,6 +25,7 @@ import com.datadoghq.sketch.ddsketch.store.CollapsingHighestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.CollapsingLowestDenseStore;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -230,15 +238,18 @@ public class DDSketch implements QuantileSketch<DDSketch> {
    */
   @Override
   public void mergeWith(DDSketch other) {
-
-    if (!indexMapping.equals(other.indexMapping)) {
-      throw new IllegalArgumentException(
-          "The sketches are not mergeable because they do not use the same index mappings.");
-    }
-
+    checkMergeability(indexMapping, other.indexMapping);
     negativeValueStore.mergeWith(other.negativeValueStore);
     positiveValueStore.mergeWith(other.positiveValueStore);
     zeroCount += other.zeroCount;
+  }
+
+  private static void checkMergeability(IndexMapping indexMapping1, IndexMapping indexMapping2)
+      throws IllegalArgumentException {
+    if (!indexMapping1.equals(indexMapping2)) {
+      throw new IllegalArgumentException(
+          "The sketches are not mergeable because they do not use the same index mappings.");
+    }
   }
 
   @Override
@@ -374,6 +385,91 @@ public class DDSketch implements QuantileSketch<DDSketch> {
 
     return new DDSketch(
         newIndexMapping, newNegativeValueStore, newPositiveValueStore, zeroCount, minIndexedValue);
+  }
+
+  public void encode(Output output, boolean omitIndexMapping) throws IOException {
+    if (!omitIndexMapping) {
+      indexMapping.encode(output);
+    }
+
+    if (zeroCount != 0) {
+      Flag.ZERO_COUNT.encode(output);
+      VarEncodingHelper.encodeVarDouble(output, zeroCount);
+    }
+
+    positiveValueStore.encode(output, Flag.Type.POSITIVE_STORE);
+    negativeValueStore.encode(output, Flag.Type.NEGATIVE_STORE);
+  }
+
+  public void decodeAndMergeWith(Input input) throws IOException {
+    final State state = new State(indexMapping, negativeValueStore, positiveValueStore, zeroCount);
+    decodeAndMergeWith(state, input);
+    zeroCount = state.zeroCount;
+  }
+
+  public static DDSketch decode(Input input, Supplier<Store> storeSupplier) throws IOException {
+    return decode(input, storeSupplier, null);
+  }
+
+  public static DDSketch decode(
+      Input input, Supplier<Store> storeSupplier, IndexMapping indexMapping) throws IOException {
+    final State state = new State(indexMapping, storeSupplier.get(), storeSupplier.get(), 0);
+    decodeAndMergeWith(state, input);
+    if (state.indexMapping == null) {
+      throw new IllegalArgumentException("The index mapping is missing.");
+    }
+    return new DDSketch(
+        state.indexMapping, state.negativeValueStore, state.positiveValueStore, state.zeroCount);
+  }
+
+  private static void decodeAndMergeWith(State state, Input input) throws IOException {
+    while (input.hasRemaining()) {
+      final Flag flag = Flag.decode(input);
+      switch (flag.type()) {
+        case POSITIVE_STORE:
+          state.positiveValueStore.decodeAndMergeWith(input, BinEncodingMode.ofFlag(flag));
+          break;
+        case NEGATIVE_STORE:
+          state.negativeValueStore.decodeAndMergeWith(input, BinEncodingMode.ofFlag(flag));
+          break;
+        case INDEX_MAPPING:
+          final IndexMapping decodedIndexMapping =
+              IndexMapping.decode(input, IndexMappingLayout.ofFlag(flag));
+          if (state.indexMapping == null) {
+            state.indexMapping = decodedIndexMapping;
+          } else {
+            checkMergeability(state.indexMapping, decodedIndexMapping);
+          }
+          break;
+        case SKETCH_FEATURES:
+          if (Flag.ZERO_COUNT.equals(flag)) {
+            state.zeroCount += VarEncodingHelper.decodeVarDouble(input);
+          } else {
+            throw new MalformedInputException("The flag is invalid.");
+          }
+          break;
+        default:
+          throw new MalformedInputException("The flag type is invalid.");
+      }
+    }
+  }
+
+  private static final class State {
+    private IndexMapping indexMapping;
+    private final Store negativeValueStore;
+    private final Store positiveValueStore;
+    private double zeroCount;
+
+    private State(
+        IndexMapping indexMapping,
+        Store negativeValueStore,
+        Store positiveValueStore,
+        double zeroCount) {
+      this.indexMapping = indexMapping;
+      this.negativeValueStore = negativeValueStore;
+      this.positiveValueStore = positiveValueStore;
+      this.zeroCount = zeroCount;
+    }
   }
 
   /** @return the size of the sketch when serialized in protobuf */

@@ -9,6 +9,9 @@ import static com.datadoghq.sketch.ddsketch.Serializer.*;
 import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.LINEAR;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -102,6 +105,13 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     return Math.min(
         Math.pow(2, Integer.MAX_VALUE / multiplier), // so that index <= Integer.MAX_VALUE
         Double.MAX_VALUE / (1 + relativeAccuracy));
+  }
+
+  @Override
+  public void encode(Output output) throws IOException {
+    IndexMappingLayout.LOG_LINEAR.toFlag().encode(output);
+    output.writeDoubleLE(gamma());
+    output.writeDoubleLE(0);
   }
 
   @Override

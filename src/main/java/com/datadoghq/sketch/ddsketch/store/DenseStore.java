@@ -6,6 +6,11 @@
 package com.datadoghq.sketch.ddsketch.store;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.BinEncodingMode;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import com.datadoghq.sketch.ddsketch.encoding.VarEncodingHelper;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -321,6 +326,19 @@ public abstract class DenseStore implements Store {
         return new Bin(nextIndex, counts[nextIndex - offset]);
       }
     };
+  }
+
+  @Override
+  public void encode(Output output, Flag.Type storeFlagType) throws IOException {
+    if (isEmpty()) {
+      return;
+    }
+    BinEncodingMode.CONTIGUOUS_COUNTS.toFlag(storeFlagType).encode(output);
+    VarEncodingHelper.encodeUnsignedVarLong(output, (long) maxIndex - (long) minIndex + 1);
+    VarEncodingHelper.encodeSignedVarLong(output, minIndex);
+    for (int i = minIndex - offset; i <= maxIndex - offset; i++) {
+      VarEncodingHelper.encodeVarDouble(output, counts[i]);
+    }
   }
 
   @Override
