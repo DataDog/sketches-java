@@ -7,6 +7,8 @@ package com.datadoghq.sketch.ddsketch.mapping;
 
 import static com.datadoghq.sketch.ddsketch.mapping.Interpolation.LINEAR;
 
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+
 /**
  * A fast {@link IndexMapping} that approximates the memory-optimal one (namely {@link
  * LogarithmicMapping}) by extracting the floor value of the logarithm to the base 2 from the binary
@@ -45,6 +47,11 @@ public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
   @Override
   double correctingFactor() {
     return 1 / Math.log(2);
+  }
+
+  @Override
+  IndexMappingLayout layout() {
+    return IndexMappingLayout.LOG_LINEAR;
   }
 
   @Override

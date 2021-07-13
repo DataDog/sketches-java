@@ -6,6 +6,10 @@
 package com.datadoghq.sketch.ddsketch.mapping;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import java.io.IOException;
 
 /**
  * A mapping between {@code double} positive values and {@code int} values that imposes relative
@@ -104,6 +108,27 @@ public interface IndexMapping {
   double minIndexableValue();
 
   double maxIndexableValue();
+
+  void encode(Output output) throws IOException;
+
+  static IndexMapping decode(Input input, IndexMappingLayout layout) throws IOException {
+    final double gamma = input.readDoubleLE();
+    final double indexOffset = input.readDoubleLE();
+    switch (layout) {
+      case LOG:
+        return new LogarithmicMapping(gamma, indexOffset);
+      case LOG_LINEAR:
+        return new LinearlyInterpolatedMapping(gamma, indexOffset);
+      case LOG_QUADRATIC:
+        return new QuadraticallyInterpolatedMapping(gamma, indexOffset);
+      case LOG_CUBIC:
+        return new CubicallyInterpolatedMapping(gamma, indexOffset);
+      case LOG_QUARTIC:
+        return new QuarticallyInterpolatedMapping(gamma, indexOffset);
+      default:
+        throw new IllegalStateException("The index mapping layout is not handled.");
+    }
+  }
 
   int serializedSize();
 
