@@ -8,8 +8,14 @@ package com.datadoghq.sketch.ddsketch.store;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.BinEncodingMode;
+import com.datadoghq.sketch.ddsketch.encoding.ByteArrayInput;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.GrowingByteArrayOutput;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
@@ -75,6 +81,27 @@ abstract class StoreTest {
     } catch (InvalidProtocolBufferException e) {
       fail(e);
     }
+    // Test encode-decode round-trip
+    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    try {
+      store.encode(output, Flag.Type.POSITIVE_STORE);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Store decoded = newStore();
+    try {
+      while (input.hasRemaining()) {
+        final Flag flag = Flag.decode(input);
+        if (!Flag.Type.POSITIVE_STORE.equals(flag.type())) {
+          fail("Invalid flag type");
+        }
+        decoded.decodeAndMergeWith(input, BinEncodingMode.ofFlag(flag));
+      }
+    } catch (IOException e) {
+      fail(e);
+    }
+    assertEncodes(expectedNonZeroCounts, decoded);
   }
 
   private static void assertEncodes(Map<Integer, Double> expectedCounts, Store store) {

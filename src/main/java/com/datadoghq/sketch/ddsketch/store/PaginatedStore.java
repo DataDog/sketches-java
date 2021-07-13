@@ -5,6 +5,11 @@
 
 package com.datadoghq.sketch.ddsketch.store;
 
+import com.datadoghq.sketch.ddsketch.encoding.BinEncodingMode;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import com.datadoghq.sketch.ddsketch.encoding.VarEncodingHelper;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -413,6 +418,25 @@ public final class PaginatedStore implements Store {
         }
       }
       return Double.NaN;
+    }
+  }
+
+  @Override
+  public void encode(Output output, Flag.Type storeFlagType) throws IOException {
+    if (isEmpty()) {
+      return;
+    }
+    for (int i = 0; i < pages.length; ++i) {
+      final double[] page = pages[i];
+      // TODO: skip non-null empty pages
+      if (null != page) {
+        BinEncodingMode.CONTIGUOUS_COUNTS.toFlag(storeFlagType).encode(output);
+        VarEncodingHelper.encodeUnsignedVarLong(output, page.length);
+        VarEncodingHelper.encodeSignedVarLong(output, (long) (i + minPageIndex) << PAGE_SHIFT);
+        for (final double count : page) {
+          VarEncodingHelper.encodeVarDouble(output, count);
+        }
+      }
     }
   }
 }
