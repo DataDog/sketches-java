@@ -23,7 +23,7 @@ public class Serialize extends BuiltSketchState {
   GrowingByteArrayOutput output;
 
   @Setup(Level.Trial)
-  public void init() {
+  public void init() throws IOException {
     super.init();
     this.output = new GrowingByteArrayOutput();
   }
