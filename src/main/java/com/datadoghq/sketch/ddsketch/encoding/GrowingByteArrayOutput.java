@@ -5,6 +5,8 @@
 
 package com.datadoghq.sketch.ddsketch.encoding;
 
+import java.util.Arrays;
+
 /**
  * An implementation of {@link Output} that is backed by an array of bytes, whose capacity is grown
  * as necessary.
@@ -81,8 +83,6 @@ public final class GrowingByteArrayOutput implements Output {
    *     size is {@link #numWrittenBytes()})
    */
   public final byte[] trimmedCopy() {
-    final byte[] copy = new byte[pos];
-    System.arraycopy(array, 0, copy, 0, copy.length);
-    return copy;
+    return Arrays.copyOf(array, pos);
   }
 }
