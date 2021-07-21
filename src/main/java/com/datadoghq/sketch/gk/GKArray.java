@@ -5,9 +5,7 @@
 
 package com.datadoghq.sketch.gk;
 
-import com.datadoghq.sketch.QuantileSketch;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -16,30 +14,30 @@ import java.util.NoSuchElementException;
  * An implementation of the <a href="http://infolab.stanford.edu/~datar/courses/cs361a/papers/quantiles.pdf">quantile
  * sketch of Greenwald and Khanna</a>.
  */
-public class GKArray implements QuantileSketch<GKArray> {
+public class GKArray<T extends Comparable<T>> {
 
     private final double rankAccuracy;
 
     private ArrayList<Entry> entries;
-    private final double[] incoming;
-    private int incomingIndex;
+    private final int maxIncomingSize;
+    private final ArrayList<T> incoming;
     private long compressedCount;
-    private double minValue;
+    private T minValue; // nullable
 
     public GKArray(double rankAccuracy) {
         this.rankAccuracy = rankAccuracy;
         this.entries = new ArrayList<>();
-        this.incoming = new double[(int) (1 / rankAccuracy) + 1];
-        this.incomingIndex = 0;
-        this.minValue = Double.MAX_VALUE;
+        this.maxIncomingSize = (int) (1 / rankAccuracy) + 1;
+        this.incoming = new ArrayList<>(maxIncomingSize);
+        this.minValue = null;
         this.compressedCount = 0;
     }
 
-    private GKArray(GKArray sketch) {
+    private GKArray(GKArray<T> sketch) {
         this.rankAccuracy = sketch.rankAccuracy;
         this.entries = new ArrayList<>(sketch.entries);
-        this.incoming = Arrays.copyOf(sketch.incoming, sketch.incoming.length);
-        this.incomingIndex = sketch.incomingIndex;
+        this.maxIncomingSize = sketch.maxIncomingSize;
+        this.incoming = new ArrayList<>(sketch.incoming);
         this.compressedCount = sketch.compressedCount;
         this.minValue = sketch.minValue;
     }
@@ -48,16 +46,14 @@ public class GKArray implements QuantileSketch<GKArray> {
         return rankAccuracy;
     }
 
-    @Override
-    public void accept(double value) {
-        incoming[incomingIndex++] = value;
-        if (incomingIndex == incoming.length) {
+    public void accept(T value) {
+        incoming.add(value);
+        if (incoming.size() == maxIncomingSize) {
             compress();
         }
     }
 
-    @Override
-    public void accept(double value, long count) {
+    public void accept(T value, long count) {
         if (count < 0) {
             throw new IllegalArgumentException("The count cannot be negative.");
         }
@@ -66,8 +62,7 @@ public class GKArray implements QuantileSketch<GKArray> {
         }
     }
 
-    @Override
-    public void mergeWith(GKArray other) {
+    public void mergeWith(GKArray<T> other) {
 
         if (rankAccuracy != other.rankAccuracy) {
             throw new IllegalArgumentException(
@@ -81,8 +76,7 @@ public class GKArray implements QuantileSketch<GKArray> {
 
         if (isEmpty()) {
             entries = new ArrayList<>(other.entries);
-            System.arraycopy(other.incoming, 0, incoming, 0, other.incomingIndex);
-            incomingIndex = other.incomingIndex;
+            incoming.addAll(other.incoming);
             compressedCount = other.compressedCount;
             minValue = other.minValue;
             return;
@@ -98,7 +92,7 @@ public class GKArray implements QuantileSketch<GKArray> {
         if ((n = other.entries.get(0).g + other.entries.get(0).delta - spread - 1) > 0) {
             incomingEntries.add(new Entry(other.minValue, n, 0));
         } else {
-            minValue = Math.min(minValue, other.minValue);
+            minValue = min(minValue, other.minValue);
         }
 
         for (int i = 0; i < other.entries.size() - 1; i++) {
@@ -118,34 +112,29 @@ public class GKArray implements QuantileSketch<GKArray> {
         compress(incomingEntries, other.compressedCount);
     }
 
-    @Override
-    public GKArray copy() {
-        return new GKArray(this);
+    public GKArray<T> copy() {
+        return new GKArray<>(this);
     }
 
-    @Override
     public boolean isEmpty() {
-        return entries.isEmpty() && incomingIndex == 0;
+        return entries.isEmpty() && incoming.isEmpty();
     }
 
-    @Override
     public void clear() {
         entries.clear();
-        incomingIndex = 0;
+        incoming.clear();
         compressedCount = 0;
-        minValue = Double.MAX_VALUE;
+        minValue = null;
     }
 
-    @Override
     public double getCount() {
-        if (incomingIndex > 0) {
+        if (!incoming.isEmpty()) {
             compress();
         }
         return compressedCount;
     }
 
-    @Override
-    public double getMinValue() {
+    public T getMinValue() {
         if (isEmpty()) {
             throw new NoSuchElementException();
         }
@@ -153,8 +142,7 @@ public class GKArray implements QuantileSketch<GKArray> {
         return minValue;
     }
 
-    @Override
-    public double getMaxValue() {
+    public T getMaxValue() {
         if (isEmpty()) {
             throw new NoSuchElementException();
         }
@@ -162,8 +150,7 @@ public class GKArray implements QuantileSketch<GKArray> {
         return entries.get(entries.size() - 1).v;
     }
 
-    @Override
-    public double getValueAtQuantile(double quantile) {
+    public T getValueAtQuantile(double quantile) {
 
         if (quantile < 0 || quantile > 1) {
             throw new IllegalArgumentException("The quantile must be between 0 and 1.");
@@ -196,13 +183,8 @@ public class GKArray implements QuantileSketch<GKArray> {
         }
     }
 
-    @Override
-    public double[] getValuesAtQuantiles(double[] quantiles) {
-        return Arrays.stream(quantiles).map(this::getValueAtQuantile).toArray();
-    }
-
     private void compressIfNecessary() {
-        if (incomingIndex > 0) {
+        if (!incoming.isEmpty()) {
             compress();
         }
     }
@@ -213,14 +195,12 @@ public class GKArray implements QuantileSketch<GKArray> {
 
     private void compress(List<Entry> additionalEntries, long additionalCount) {
 
-        for (int i = 0; i < incomingIndex; i++) {
-            additionalEntries.add(new Entry(incoming[i], 1, 0));
-        }
-        additionalEntries.sort(Comparator.comparingDouble(e -> e.v));
+        incoming.forEach(v -> additionalEntries.add(new Entry(v, 1, 0)));
+        additionalEntries.sort(Comparator.nullsLast(Comparator.comparing(e -> e.v, T::compareTo)));
 
-        compressedCount += additionalCount + incomingIndex;
+        compressedCount += additionalCount + incoming.size();
         if (!additionalEntries.isEmpty()) {
-            minValue = Math.min(minValue, additionalEntries.get(0).v);
+            minValue = min(minValue, additionalEntries.get(0).v);
         }
 
         final long removalThreshold = 2 * (long) (rankAccuracy * (compressedCount - 1));
@@ -255,7 +235,7 @@ public class GKArray implements QuantileSketch<GKArray> {
 
                 i++;
 
-            } else if (additionalEntries.get(i).v < entries.get(j).v) {
+            } else if (additionalEntries.get(i).v.compareTo(entries.get(j).v) < 0) {
 
                 if (additionalEntries.get(i).g + entries.get(j).g + entries.get(j).delta <= removalThreshold) {
                     entries.get(j).g += additionalEntries.get(i).g;
@@ -283,19 +263,27 @@ public class GKArray implements QuantileSketch<GKArray> {
         }
 
         entries = mergedEntries;
-        incomingIndex = 0;
+        incoming.clear();
     }
 
-    private static class Entry {
+    private class Entry {
 
-        private final double v;
+        private final T v; // nullable
         private long g;
         private long delta;
 
-        private Entry(double v, long g, long delta) {
+        private Entry(T v, long g, long delta) {
             this.v = v;
             this.g = g;
             this.delta = delta;
+        }
+    }
+
+    static <T extends Comparable<T>> T min(T a, T b) {
+        if (Comparator.nullsLast(T::compareTo).compare(a, b) < 0) {
+            return a;
+        } else {
+            return b;
         }
     }
 }
