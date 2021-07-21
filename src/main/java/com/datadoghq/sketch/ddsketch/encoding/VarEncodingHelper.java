@@ -26,10 +26,8 @@ public final class VarEncodingHelper {
    * @throws IOException if an {@link IOException} is thrown while writing to {@code output}
    */
   public static void encodeUnsignedVarLong(final Output output, long value) throws IOException {
-    for (int i = 0; i < MAX_VAR_LEN_64 - 1; i++) {
-      if (value >= 0 && value < 0x80L) {
-        break;
-      }
+    final int length = (63 - Long.numberOfLeadingZeros(value)) / 7;
+    for (int i = 0; i < length && i < 8; i++) {
       output.writeByte((byte) (value | 0x80L));
       value >>>= 7;
     }
