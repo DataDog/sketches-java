@@ -25,7 +25,7 @@ public class Serialize extends BuiltSketchState {
   @Setup(Level.Trial)
   public void init() throws IOException {
     super.init();
-    this.output = new GrowingByteArrayOutput();
+    this.output = GrowingByteArrayOutput.withDefaultInitialCapacity();
   }
 
   @Benchmark
@@ -40,7 +40,7 @@ public class Serialize extends BuiltSketchState {
 
   @Benchmark
   public byte[] encode() throws IOException {
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     sketch.encode(output, false);
     return output.trimmedCopy();
   }

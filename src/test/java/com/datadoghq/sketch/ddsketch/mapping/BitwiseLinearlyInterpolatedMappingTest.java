@@ -45,14 +45,14 @@ class BitwiseLinearlyInterpolatedMappingTest extends IndexMappingTest {
   @Override
   void testEncodeDecode() {
     final BitwiseLinearlyInterpolatedMapping mapping = getMapping(1e-2);
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       mapping.encode(output);
     } catch (IOException e) {
       fail(e);
     }
 
-    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     final IndexMapping decoded;
     try {
       final Flag flag = Flag.decode(input);

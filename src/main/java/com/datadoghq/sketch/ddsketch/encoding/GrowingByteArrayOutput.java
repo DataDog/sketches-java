@@ -18,15 +18,19 @@ public final class GrowingByteArrayOutput implements Output {
   private byte[] array;
   private int pos = 0; // invariant: pos <= array.length
 
-  public GrowingByteArrayOutput(int initialCapacity) {
+  private GrowingByteArrayOutput(int initialCapacity) {
     if (initialCapacity < 0) {
       throw new IllegalArgumentException("Capacity cannot be negative");
     }
     this.array = new byte[initialCapacity];
   }
 
-  public GrowingByteArrayOutput() {
-    this(INITIAL_CAPACITY);
+  public static GrowingByteArrayOutput withInitialCapacity(int initialCapacity) {
+    return new GrowingByteArrayOutput(initialCapacity);
+  }
+
+  public static GrowingByteArrayOutput withDefaultInitialCapacity() {
+    return withInitialCapacity(INITIAL_CAPACITY);
   }
 
   private void grow(int requiredCapacity) {

@@ -82,13 +82,13 @@ abstract class StoreTest {
       fail(e);
     }
     // Test encode-decode round-trip
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       store.encode(output, Flag.Type.POSITIVE_STORE);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     final Store decoded = newStore();
     try {
       while (input.hasRemaining()) {

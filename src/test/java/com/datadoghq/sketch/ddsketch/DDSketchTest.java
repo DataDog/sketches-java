@@ -231,13 +231,13 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
 
   void testEncodeDecode(
       boolean merged, double[] values, DDSketch sketch, Supplier<Store> finalStoreSupplier) {
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       sketch.encode(output, false);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     final DDSketch decoded;
     try {
       decoded = DDSketch.decode(input, finalStoreSupplier);
@@ -262,7 +262,7 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     final IndexMapping mapping1 = new QuadraticallyInterpolatedMapping(relativeAccuracy());
     final DDSketch sketch1 = new DDSketch(mapping1, storeSupplier());
     sketch1.accept(0.9);
-    final GrowingByteArrayOutput output1 = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output1 = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       sketch1.encode(output1, false);
     } catch (IOException e) {
@@ -271,7 +271,7 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
 
     final IndexMapping mapping2 = new CubicallyInterpolatedMapping(relativeAccuracy());
     final DDSketch sketch2 = new DDSketch(mapping2, storeSupplier());
-    final GrowingByteArrayOutput output2 = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output2 = GrowingByteArrayOutput.withDefaultInitialCapacity();
     sketch2.accept(0.8);
     try {
       sketch2.encode(output2, false);
@@ -279,7 +279,7 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
       fail(e);
     }
 
-    final Input input1 = new ByteArrayInput(output1.backingArray(), 0, output1.numWrittenBytes());
+    final Input input1 = ByteArrayInput.wrap(output1.backingArray(), 0, output1.numWrittenBytes());
     final DDSketch decoded;
     try {
       decoded = DDSketch.decode(input1, storeSupplier());
@@ -290,7 +290,7 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     }
     assertThat(decoded.getIndexMapping().getClass()).isEqualTo(mapping1.getClass());
 
-    final Input input2 = new ByteArrayInput(output2.backingArray(), 0, output2.numWrittenBytes());
+    final Input input2 = ByteArrayInput.wrap(output2.backingArray(), 0, output2.numWrittenBytes());
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> decoded.decodeAndMergeWith(input2));
   }
@@ -300,13 +300,13 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     final IndexMapping mapping = mapping();
     final DDSketch sketch = new DDSketch(mapping, storeSupplier());
 
-    final GrowingByteArrayOutput output1 = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output1 = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       mapping.encode(output1);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input1 = new ByteArrayInput(output1.backingArray(), 0, output1.numWrittenBytes());
+    final Input input1 = ByteArrayInput.wrap(output1.backingArray(), 0, output1.numWrittenBytes());
     try {
       DDSketch.decode(input1, storeSupplier());
       assertThat(input1.hasRemaining()).isFalse();
@@ -315,17 +315,17 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
       return;
     }
 
-    final Input input2 = new ByteArrayInput(new byte[] {});
+    final Input input2 = ByteArrayInput.wrap(new byte[] {});
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> DDSketch.decode(input2, storeSupplier()));
 
-    final GrowingByteArrayOutput output3 = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output3 = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       sketch.encode(output3, false);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input3 = new ByteArrayInput(output3.backingArray(), 0, output3.numWrittenBytes());
+    final Input input3 = ByteArrayInput.wrap(output3.backingArray(), 0, output3.numWrittenBytes());
     try {
       DDSketch.decode(input3, storeSupplier());
       assertThat(input3.hasRemaining()).isFalse();
@@ -333,13 +333,13 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
       fail(e);
     }
 
-    final GrowingByteArrayOutput output4 = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output4 = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       sketch.encode(output4, true);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input4 = new ByteArrayInput(output4.backingArray(), 0, output4.numWrittenBytes());
+    final Input input4 = ByteArrayInput.wrap(output4.backingArray(), 0, output4.numWrittenBytes());
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> DDSketch.decode(input4, storeSupplier()));
   }
@@ -351,16 +351,16 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     final DDSketch sketch1 = newSketch();
     sketch0.accept(values[0]);
     sketch1.accept(values[1]);
-    final GrowingByteArrayOutput output0 = new GrowingByteArrayOutput();
-    final GrowingByteArrayOutput output1 = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output0 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    final GrowingByteArrayOutput output1 = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       sketch0.encode(output0, false);
       sketch1.encode(output1, false);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input0 = new ByteArrayInput(output0.backingArray(), 0, output0.numWrittenBytes());
-    final Input input1 = new ByteArrayInput(output1.backingArray(), 0, output1.numWrittenBytes());
+    final Input input0 = ByteArrayInput.wrap(output0.backingArray(), 0, output0.numWrittenBytes());
+    final Input input1 = ByteArrayInput.wrap(output1.backingArray(), 0, output1.numWrittenBytes());
     final DDSketch decoded;
     try {
       decoded = DDSketch.decode(input0, storeSupplier());
@@ -381,14 +381,14 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     final DDSketch sketch1 = newSketch();
     sketch0.accept(values[0]);
     sketch1.accept(values[1]);
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       sketch0.encode(output, false);
       sketch1.encode(output, false);
     } catch (IOException e) {
       fail(e);
     }
-    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     final DDSketch decoded;
     try {
       decoded = DDSketch.decode(input, storeSupplier());

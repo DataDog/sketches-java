@@ -16,7 +16,7 @@ public final class ByteArrayInput implements Input {
   private final int endPos;
   private int pos;
 
-  public ByteArrayInput(byte[] array, int offset, int length) {
+  private ByteArrayInput(byte[] array, int offset, int length) {
     Objects.requireNonNull(array);
     if (offset < 0 || offset + length > array.length) {
       throw new IndexOutOfBoundsException();
@@ -26,8 +26,12 @@ public final class ByteArrayInput implements Input {
     this.pos = offset;
   }
 
-  public ByteArrayInput(byte[] array) {
-    this(array, 0, array.length);
+  public static ByteArrayInput wrap(byte[] array, int offset, int length) {
+    return new ByteArrayInput(array, offset, length);
+  }
+
+  public static ByteArrayInput wrap(byte[] array) {
+    return wrap(array, 0, array.length);
   }
 
   @Override

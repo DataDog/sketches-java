@@ -31,11 +31,11 @@ public class Deserialize extends BuiltSketchState {
   public void init() throws IOException {
     super.init();
     this.fromProtoData = DDSketchProtoBinding.toProto(sketch).toByteArray();
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     sketch.encode(output, false);
     this.decodeData = output.trimmedCopy();
     this.decodedSketch =
-        DDSketch.decode(new ByteArrayInput(decodeData), sketchOption.getStoreSupplier());
+        DDSketch.decode(ByteArrayInput.wrap(decodeData), sketchOption.getStoreSupplier());
   }
 
   @Benchmark
@@ -47,13 +47,13 @@ public class Deserialize extends BuiltSketchState {
 
   @Benchmark
   public DDSketch decode() throws IOException {
-    return DDSketch.decode(new ByteArrayInput(decodeData), sketchOption.getStoreSupplier());
+    return DDSketch.decode(ByteArrayInput.wrap(decodeData), sketchOption.getStoreSupplier());
   }
 
   @Benchmark
   public DDSketch decodeReusing() throws IOException {
     decodedSketch.clear();
-    decodedSketch.decodeAndMergeWith(new ByteArrayInput(decodeData));
+    decodedSketch.decodeAndMergeWith(ByteArrayInput.wrap(decodeData));
     return decodedSketch;
   }
 }

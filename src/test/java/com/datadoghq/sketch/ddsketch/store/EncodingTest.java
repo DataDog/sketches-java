@@ -38,9 +38,9 @@ class EncodingTest {
       StoreTestCase finalStoreTestCase) {
     final Store initialStore = initialStoreTestCase.storeSupplier().get();
     binsTestCase.getBins().forEach(initialStore::add);
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     encode(output, initialStore);
-    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     final Store finalStore = finalStoreTestCase.storeSupplier().get();
     decode(input, finalStore);
     final Collection<Bin> transformedBins =

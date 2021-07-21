@@ -20,7 +20,7 @@ class VarEncodingHelperTest {
   @ParameterizedTest
   @MethodSource("unsignedVarLongs")
   void testEncodeUnsignedVarLong(long value, byte[] bytes) {
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       VarEncodingHelper.encodeUnsignedVarLong(output, value);
     } catch (IOException e) {
@@ -33,7 +33,7 @@ class VarEncodingHelperTest {
   @ParameterizedTest
   @MethodSource("unsignedVarLongs")
   void testDecodeUnsignedVarLong(long value, byte[] bytes) {
-    final Input input = new ByteArrayInput(bytes);
+    final Input input = ByteArrayInput.wrap(bytes);
     final long decoded;
     try {
       decoded = VarEncodingHelper.decodeUnsignedVarLong(input);
@@ -87,7 +87,7 @@ class VarEncodingHelperTest {
   @ParameterizedTest
   @MethodSource("signedVarLongs")
   void testEncodeSignedVarLong(long value, byte[] bytes) {
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       VarEncodingHelper.encodeSignedVarLong(output, value);
     } catch (IOException e) {
@@ -100,7 +100,7 @@ class VarEncodingHelperTest {
   @ParameterizedTest
   @MethodSource("signedVarLongs")
   void testDecodeSignedVarLong(long value, byte[] bytes) {
-    final Input input = new ByteArrayInput(bytes);
+    final Input input = ByteArrayInput.wrap(bytes);
     final long decoded;
     try {
       decoded = VarEncodingHelper.decodeSignedVarLong(input);
@@ -267,7 +267,7 @@ class VarEncodingHelperTest {
   @ParameterizedTest
   @MethodSource("varDoubles")
   void testEncodeVarDouble(double value, byte[] bytes) {
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       VarEncodingHelper.encodeVarDouble(output, value);
     } catch (IOException e) {
@@ -280,7 +280,7 @@ class VarEncodingHelperTest {
   @ParameterizedTest
   @MethodSource("varDoubles")
   void testDecodeVarDouble(double value, byte[] bytes) {
-    final Input input = new ByteArrayInput(bytes);
+    final Input input = ByteArrayInput.wrap(bytes);
     final double decoded;
     try {
       decoded = VarEncodingHelper.decodeVarDouble(input);

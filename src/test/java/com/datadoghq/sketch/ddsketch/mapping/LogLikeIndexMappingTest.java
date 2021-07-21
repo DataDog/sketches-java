@@ -72,14 +72,14 @@ abstract class LogLikeIndexMappingTest extends IndexMappingTest {
   @Override
   void testEncodeDecode() {
     final LogLikeIndexMapping mapping = getMapping(1.02, 3);
-    final GrowingByteArrayOutput output = new GrowingByteArrayOutput();
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       mapping.encode(output);
     } catch (IOException e) {
       fail(e);
     }
 
-    final Input input = new ByteArrayInput(output.backingArray(), 0, output.numWrittenBytes());
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     final IndexMapping decoded;
     try {
       final Flag flag = Flag.decode(input);
