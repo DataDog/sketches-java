@@ -43,6 +43,9 @@ public class ByteArrayInput implements Input {
   }
 
   public static ByteArrayInput wrap(byte[] array, int offset, int length) {
+    if (UNSAFE == null) {
+      return new ByteArrayInput(array, offset, length);
+    }
     final ByteOrder nativeOrder = ByteOrder.nativeOrder();
     if (ByteOrder.LITTLE_ENDIAN.equals(nativeOrder)) {
       return new LittleEndianNativeOrderByteArrayInput(array, offset, length);
