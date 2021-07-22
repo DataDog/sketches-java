@@ -8,6 +8,7 @@ package com.datadoghq.sketch.ddsketch.benchmarks;
 import com.datadoghq.sketch.ddsketch.DDSketch;
 import com.datadoghq.sketch.ddsketch.DDSketchOption;
 import com.datadoghq.sketch.ddsketch.DataGenerator;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
@@ -29,7 +30,7 @@ public abstract class BuiltSketchState {
   DDSketch sketch;
 
   @Setup(Level.Trial)
-  public void init() {
+  public void init() throws IOException {
     this.sketch = sketchOption.create(relativeAccuracy);
     for (int i = 0; i < count; ++i) {
       sketch.accept(unit.toNanos(Math.abs(Math.round(generator.nextValue()))));

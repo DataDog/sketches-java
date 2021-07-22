@@ -6,8 +6,15 @@
 package com.datadoghq.sketch.ddsketch.mapping;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import com.datadoghq.sketch.ddsketch.encoding.ByteArrayInput;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.GrowingByteArrayOutput;
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 class BitwiseLinearlyInterpolatedMappingTest extends IndexMappingTest {
@@ -32,5 +39,35 @@ class BitwiseLinearlyInterpolatedMappingTest extends IndexMappingTest {
         mapping.value(0),
         roundTripMapping.value(0),
         AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+  }
+
+  @Test
+  @Override
+  void testEncodeDecode() {
+    final BitwiseLinearlyInterpolatedMapping mapping = getMapping(1e-2);
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      mapping.encode(output);
+    } catch (IOException e) {
+      fail(e);
+    }
+
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
+    final IndexMapping decoded;
+    try {
+      final Flag flag = Flag.decode(input);
+      decoded = IndexMapping.decode(input, IndexMappingLayout.ofFlag(flag));
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+    // TODO: decoded could be a BitwiseLinearlyInterpolatedMapping
+    assertEquals(LinearlyInterpolatedMapping.class, decoded.getClass());
+    assertEquals(
+        mapping.relativeAccuracy(),
+        decoded.relativeAccuracy(),
+        AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
+    assertEquals(
+        mapping.value(0), decoded.value(0), AccuracyTester.FLOATING_POINT_ACCEPTABLE_ERROR);
   }
 }

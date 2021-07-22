@@ -5,6 +5,11 @@
 
 package com.datadoghq.sketch.ddsketch.store;
 
+import com.datadoghq.sketch.ddsketch.encoding.BinEncodingMode;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.Output;
+import com.datadoghq.sketch.ddsketch.encoding.VarEncodingHelper;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -98,5 +103,20 @@ public class SparseStore implements Store {
         return new Bin(nextEntry.getKey(), nextEntry.getValue());
       }
     };
+  }
+
+  @Override
+  public void encode(Output output, Flag.Type storeFlagType) throws IOException {
+    if (isEmpty()) {
+      return;
+    }
+    BinEncodingMode.INDEX_DELTAS_AND_COUNTS.toFlag(storeFlagType).encode(output);
+    VarEncodingHelper.encodeUnsignedVarLong(output, bins.size());
+    long previousIndex = 0;
+    for (final Entry<Integer, Double> entry : bins.entrySet()) {
+      VarEncodingHelper.encodeSignedVarLong(output, entry.getKey() - previousIndex);
+      VarEncodingHelper.encodeVarDouble(output, entry.getValue());
+      previousIndex = entry.getKey();
+    }
   }
 }

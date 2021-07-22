@@ -6,30 +6,34 @@
 package com.datadoghq.sketch.ddsketch;
 
 import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.mapping.CubicallyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
+import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
 import com.datadoghq.sketch.ddsketch.store.PaginatedStore;
+import com.datadoghq.sketch.ddsketch.store.Store;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import java.util.function.DoubleFunction;
+import java.util.function.Supplier;
 
 public enum DDSketchOption {
-  FAST(
-      relativeAccuracy ->
-          new DDSketch(
-              new BitwiseLinearlyInterpolatedMapping(relativeAccuracy),
-              UnboundedSizeDenseStore::new)),
-  MEMORY_OPTIMAL(DDSketches::logarithmicUnboundedDense),
-  BALANCED(DDSketches::unboundedDense),
-  PAGINATED(
-      relativeAccuracy ->
-          new DDSketch(
-              new BitwiseLinearlyInterpolatedMapping(relativeAccuracy), PaginatedStore::new));
+  FAST(BitwiseLinearlyInterpolatedMapping::new, UnboundedSizeDenseStore::new),
+  MEMORY_OPTIMAL(LogarithmicMapping::new, UnboundedSizeDenseStore::new),
+  BALANCED(CubicallyInterpolatedMapping::new, UnboundedSizeDenseStore::new),
+  PAGINATED(BitwiseLinearlyInterpolatedMapping::new, PaginatedStore::new);
 
-  private final DoubleFunction<DDSketch> creator;
+  private final DoubleFunction<IndexMapping> indexMapping;
+  private final Supplier<Store> storeSupplier;
 
-  DDSketchOption(DoubleFunction<DDSketch> creator) {
-    this.creator = creator;
+  DDSketchOption(DoubleFunction<IndexMapping> indexMapping, Supplier<Store> storeSupplier) {
+    this.indexMapping = indexMapping;
+    this.storeSupplier = storeSupplier;
   }
 
   public DDSketch create(double relativeAccuracy) {
-    return creator.apply(relativeAccuracy);
+    return new DDSketch(indexMapping.apply(relativeAccuracy), storeSupplier);
+  }
+
+  public Supplier<Store> getStoreSupplier() {
+    return storeSupplier;
   }
 }

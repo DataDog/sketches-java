@@ -5,11 +5,18 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.datadoghq.sketch.ddsketch.Serializer;
+import com.datadoghq.sketch.ddsketch.encoding.ByteArrayInput;
+import com.datadoghq.sketch.ddsketch.encoding.Flag;
+import com.datadoghq.sketch.ddsketch.encoding.GrowingByteArrayOutput;
+import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 abstract class LogLikeIndexMappingTest extends IndexMappingTest {
@@ -59,6 +66,29 @@ abstract class LogLikeIndexMappingTest extends IndexMappingTest {
     } catch (InvalidProtocolBufferException e) {
       fail(e);
     }
+  }
+
+  @Test
+  @Override
+  void testEncodeDecode() {
+    final LogLikeIndexMapping mapping = getMapping(1.02, 3);
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      mapping.encode(output);
+    } catch (IOException e) {
+      fail(e);
+    }
+
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
+    final IndexMapping decoded;
+    try {
+      final Flag flag = Flag.decode(input);
+      decoded = IndexMapping.decode(input, IndexMappingLayout.ofFlag(flag));
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+    assertThat(decoded).isEqualTo(mapping);
   }
 
   private void assertSameAfterProtoRoundTrip(

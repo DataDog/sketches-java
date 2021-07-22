@@ -5,17 +5,25 @@
 
 package com.datadoghq.sketch.ddsketch;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.datadoghq.sketch.QuantileSketchTest;
+import com.datadoghq.sketch.ddsketch.encoding.ByteArrayInput;
+import com.datadoghq.sketch.ddsketch.encoding.GrowingByteArrayOutput;
+import com.datadoghq.sketch.ddsketch.encoding.Input;
 import com.datadoghq.sketch.ddsketch.mapping.BitwiseLinearlyInterpolatedMapping;
+import com.datadoghq.sketch.ddsketch.mapping.CubicallyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.mapping.LogarithmicMapping;
+import com.datadoghq.sketch.ddsketch.mapping.QuadraticallyInterpolatedMapping;
 import com.datadoghq.sketch.ddsketch.store.Store;
+import com.datadoghq.sketch.ddsketch.store.StoreTestCase;
 import com.datadoghq.sketch.ddsketch.store.UnboundedSizeDenseStore;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
@@ -204,6 +212,7 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
     } catch (InvalidProtocolBufferException e) {
       fail(e);
     }
+    testEncodeDecode(merged, values, sketch);
   }
 
   void testProtoRoundTrip(boolean merged, double[] values, DDSketch sketch)
@@ -218,6 +227,177 @@ abstract class DDSketchTest extends QuantileSketchTest<DDSketch> {
         DDSketchProtoBinding.fromProto(
             storeSupplier(),
             com.datadoghq.sketch.ddsketch.proto.DDSketch.parseFrom(sketch.serialize())));
+  }
+
+  void testEncodeDecode(
+      boolean merged, double[] values, DDSketch sketch, Supplier<Store> finalStoreSupplier) {
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      sketch.encode(output, false);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
+    final DDSketch decoded;
+    try {
+      decoded = DDSketch.decode(input, finalStoreSupplier);
+      assertThat(input.hasRemaining()).isFalse();
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+    assertEncodes(merged, values, decoded);
+  }
+
+  void testEncodeDecode(boolean merged, double[] values, DDSketch sketch) {
+    Arrays.stream(StoreTestCase.values())
+        .filter(StoreTestCase::isLossless)
+        .forEach(
+            storeTestCase ->
+                testEncodeDecode(merged, values, sketch, storeTestCase.storeSupplier()));
+  }
+
+  @Test
+  void testIndexMappingEncodingMismatch() {
+    final IndexMapping mapping1 = new QuadraticallyInterpolatedMapping(relativeAccuracy());
+    final DDSketch sketch1 = new DDSketch(mapping1, storeSupplier());
+    sketch1.accept(0.9);
+    final GrowingByteArrayOutput output1 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      sketch1.encode(output1, false);
+    } catch (IOException e) {
+      fail(e);
+    }
+
+    final IndexMapping mapping2 = new CubicallyInterpolatedMapping(relativeAccuracy());
+    final DDSketch sketch2 = new DDSketch(mapping2, storeSupplier());
+    final GrowingByteArrayOutput output2 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    sketch2.accept(0.8);
+    try {
+      sketch2.encode(output2, false);
+    } catch (IOException e) {
+      fail(e);
+    }
+
+    final Input input1 = ByteArrayInput.wrap(output1.backingArray(), 0, output1.numWrittenBytes());
+    final DDSketch decoded;
+    try {
+      decoded = DDSketch.decode(input1, storeSupplier());
+      assertThat(input1.hasRemaining()).isFalse();
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+    assertThat(decoded.getIndexMapping().getClass()).isEqualTo(mapping1.getClass());
+
+    final Input input2 = ByteArrayInput.wrap(output2.backingArray(), 0, output2.numWrittenBytes());
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> decoded.decodeAndMergeWith(input2));
+  }
+
+  @Test
+  void testMissingIndexMappingEncoding() {
+    final IndexMapping mapping = mapping();
+    final DDSketch sketch = new DDSketch(mapping, storeSupplier());
+
+    final GrowingByteArrayOutput output1 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      mapping.encode(output1);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input1 = ByteArrayInput.wrap(output1.backingArray(), 0, output1.numWrittenBytes());
+    try {
+      DDSketch.decode(input1, storeSupplier());
+      assertThat(input1.hasRemaining()).isFalse();
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+
+    final Input input2 = ByteArrayInput.wrap(new byte[] {});
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> DDSketch.decode(input2, storeSupplier()));
+
+    final GrowingByteArrayOutput output3 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      sketch.encode(output3, false);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input3 = ByteArrayInput.wrap(output3.backingArray(), 0, output3.numWrittenBytes());
+    try {
+      DDSketch.decode(input3, storeSupplier());
+      assertThat(input3.hasRemaining()).isFalse();
+    } catch (IOException e) {
+      fail(e);
+    }
+
+    final GrowingByteArrayOutput output4 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      sketch.encode(output4, true);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input4 = ByteArrayInput.wrap(output4.backingArray(), 0, output4.numWrittenBytes());
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> DDSketch.decode(input4, storeSupplier()));
+  }
+
+  @Test
+  void testDecodeAndMergeWith() {
+    final double[] values = new double[] {0.33, -7};
+    final DDSketch sketch0 = newSketch();
+    final DDSketch sketch1 = newSketch();
+    sketch0.accept(values[0]);
+    sketch1.accept(values[1]);
+    final GrowingByteArrayOutput output0 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    final GrowingByteArrayOutput output1 = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      sketch0.encode(output0, false);
+      sketch1.encode(output1, false);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input0 = ByteArrayInput.wrap(output0.backingArray(), 0, output0.numWrittenBytes());
+    final Input input1 = ByteArrayInput.wrap(output1.backingArray(), 0, output1.numWrittenBytes());
+    final DDSketch decoded;
+    try {
+      decoded = DDSketch.decode(input0, storeSupplier());
+      decoded.decodeAndMergeWith(input1);
+      assertThat(input0.hasRemaining()).isFalse();
+      assertThat(input1.hasRemaining()).isFalse();
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+    assertEncodes(true, values, decoded);
+  }
+
+  @Test
+  void testMergingByConcatenatingEncoded() {
+    final double[] values = new double[] {0.33, -7};
+    final DDSketch sketch0 = newSketch();
+    final DDSketch sketch1 = newSketch();
+    sketch0.accept(values[0]);
+    sketch1.accept(values[1]);
+    final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
+    try {
+      sketch0.encode(output, false);
+      sketch1.encode(output, false);
+    } catch (IOException e) {
+      fail(e);
+    }
+    final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
+    final DDSketch decoded;
+    try {
+      decoded = DDSketch.decode(input, storeSupplier());
+      assertThat(input.hasRemaining()).isFalse();
+    } catch (IOException e) {
+      fail(e);
+      return;
+    }
+    assertEncodes(true, values, decoded);
   }
 
   @ParameterizedTest

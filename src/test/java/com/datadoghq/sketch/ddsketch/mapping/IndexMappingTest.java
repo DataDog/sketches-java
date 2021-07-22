@@ -60,6 +60,9 @@ abstract class IndexMappingTest {
   @Test
   abstract void testProtoRoundTrip();
 
+  @Test
+  abstract void testEncodeDecode();
+
   void testAccuracy(IndexMapping mapping, double relativeAccuracy) {
 
     // Assert that the stated relative accuracy of the mapping is less than or equal to the
