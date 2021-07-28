@@ -48,6 +48,7 @@ public enum BinEncodingMode {
    *   <li>[byte] flag
    *   <li>[uvarint64] number of bins N
    *   <li>[varint64] index of first bin
+   *   <li>[varint64] difference between two successive indexes
    *   <li>[varfloat64] count of first bin
    *   <li>[varfloat64] count of second bin
    *   <li>...

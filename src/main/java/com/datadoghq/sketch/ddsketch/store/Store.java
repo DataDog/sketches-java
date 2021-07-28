@@ -194,7 +194,8 @@ public interface Store {
         {
           final long numBins = VarEncodingHelper.decodeUnsignedVarLong(input);
           long index = VarEncodingHelper.decodeSignedVarLong(input);
-          for (long i = 0; i != numBins; i++, index++) {
+          final long indexDelta = VarEncodingHelper.decodeSignedVarLong(input);
+          for (long i = 0; i != numBins; i++, index += indexDelta) {
             final double count = VarEncodingHelper.decodeVarDouble(input);
             add(Math.toIntExact(index), count);
           }
