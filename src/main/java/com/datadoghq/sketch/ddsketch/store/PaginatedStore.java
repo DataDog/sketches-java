@@ -433,6 +433,7 @@ public final class PaginatedStore implements Store {
         BinEncodingMode.CONTIGUOUS_COUNTS.toFlag(storeFlagType).encode(output);
         VarEncodingHelper.encodeUnsignedVarLong(output, page.length);
         VarEncodingHelper.encodeSignedVarLong(output, (long) (i + minPageIndex) << PAGE_SHIFT);
+        VarEncodingHelper.encodeSignedVarLong(output, 1);
         for (final double count : page) {
           VarEncodingHelper.encodeVarDouble(output, count);
         }

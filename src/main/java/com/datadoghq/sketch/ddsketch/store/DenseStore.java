@@ -336,6 +336,7 @@ public abstract class DenseStore implements Store {
     BinEncodingMode.CONTIGUOUS_COUNTS.toFlag(storeFlagType).encode(output);
     VarEncodingHelper.encodeUnsignedVarLong(output, (long) maxIndex - (long) minIndex + 1);
     VarEncodingHelper.encodeSignedVarLong(output, minIndex);
+    VarEncodingHelper.encodeSignedVarLong(output, 1);
     for (int i = minIndex - offset; i <= maxIndex - offset; i++) {
       VarEncodingHelper.encodeVarDouble(output, counts[i]);
     }
