@@ -129,16 +129,18 @@ public class WithExactSummaryStatisticsTest
   }
 
   @Override
-  protected void assertSumAccurate(double[] sortedValues, double actualSumValue) {
-    final DoubleSummaryStatistics summaryStatistics = new DoubleSummaryStatistics();
-    Arrays.stream(sortedValues).forEach(summaryStatistics);
-    assertEquals(summaryStatistics.getSum(), actualSumValue);
+  protected void assertSumAccurate(double[] values, double actualSumValue) {
+    assertEquals(summaryStatistics(values).getSum(), actualSumValue);
   }
 
   @Override
-  protected void assertAverageAccurate(double[] sortedValues, double actualAverageValue) {
+  protected void assertAverageAccurate(double[] values, double actualAverageValue) {
+    assertEquals(summaryStatistics(values).getAverage(), actualAverageValue);
+  }
+
+  private static DoubleSummaryStatistics summaryStatistics(double[] values) {
     final DoubleSummaryStatistics summaryStatistics = new DoubleSummaryStatistics();
-    Arrays.stream(sortedValues).forEach(summaryStatistics);
-    assertEquals(summaryStatistics.getAverage(), actualAverageValue);
+    Arrays.stream(values).forEach(summaryStatistics);
+    return summaryStatistics;
   }
 }
