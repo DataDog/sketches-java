@@ -43,6 +43,10 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
 
   protected abstract void assertAverageAccurate(double[] values, double actualAverageValue);
 
+  protected void assertCountAccurate(double[] values, double actualCountValue) {
+    assertThat(actualCountValue).isCloseTo(values.length, DOUBLE_OFFSET);
+  }
+
   @Test
   protected void throwsExceptionWhenExpected() {
 
@@ -106,7 +110,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   }
 
   protected final void assertEncodes(boolean merged, double[] values, QS sketch) {
-    assertThat(sketch.getCount()).isCloseTo(values.length, DOUBLE_OFFSET);
+    assertCountAccurate(values, sketch.getCount());
     if (values.length == 0) {
       assertTrue(sketch.isEmpty());
     } else {

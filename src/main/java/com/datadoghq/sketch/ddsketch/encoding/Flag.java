@@ -51,6 +51,54 @@ public final class Flag {
    */
   public static final Flag ZERO_COUNT = new Flag(Type.SKETCH_FEATURES, (byte) 1);
 
+  /**
+   * Encodes the total count.
+   *
+   * <p>Encoding format:
+   *
+   * <ul>
+   *   <li>[byte] flag
+   *   <li>[varfloat64] total count
+   * </ul>
+   */
+  public static final Flag COUNT = new Flag(Type.SKETCH_FEATURES, (byte) 0x28);
+
+  /**
+   * Encodes the total sum.
+   *
+   * <p>Encoding format:
+   *
+   * <ul>
+   *   <li>[byte] flag
+   *   <li>[float64LE] total sum
+   * </ul>
+   */
+  public static final Flag SUM = new Flag(Type.SKETCH_FEATURES, (byte) 0x21);
+
+  /**
+   * Encodes the global minimum value.
+   *
+   * <p>Encoding format:
+   *
+   * <ul>
+   *   <li>[byte] flag
+   *   <li>[float64LE] global minimum value
+   * </ul>
+   */
+  public static final Flag MIN = new Flag(Type.SKETCH_FEATURES, (byte) 0x22);
+
+  /**
+   * Encodes the global maximum value.
+   *
+   * <p>Encoding format:
+   *
+   * <ul>
+   *   <li>[byte] flag
+   *   <li>[float64LE] global maximum value
+   * </ul>
+   */
+  public static final Flag MAX = new Flag(Type.SKETCH_FEATURES, (byte) 0x23);
+
   private final byte marker;
 
   private Flag(byte marker) {

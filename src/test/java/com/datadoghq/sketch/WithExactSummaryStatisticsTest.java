@@ -12,9 +12,12 @@ import java.util.DoubleSummaryStatistics;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Assertions;
 
-public class WithExactSummaryStatisticsTest
-    extends QuantileSketchTest<
-        WithExactSummaryStatistics<WithExactSummaryStatisticsTest.DummySketch>> {
+public abstract class WithExactSummaryStatisticsTest<
+        QS extends QuantileSketch<QS>, W extends WithExactSummaryStatistics<QS>>
+    extends QuantileSketchTest<WithExactSummaryStatistics<QS>> {
+
+  @Override
+  protected abstract W newSketch();
 
   static class DummySketch implements QuantileSketch<DummySketch> {
 
@@ -108,17 +111,6 @@ public class WithExactSummaryStatisticsTest
   }
 
   @Override
-  protected WithExactSummaryStatistics<DummySketch> newSketch() {
-    return new WithExactSummaryStatistics<>(DummySketch::new);
-  }
-
-  @Override
-  protected void assertQuantileAccurate(
-      boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
-    // Nothing to assert
-  }
-
-  @Override
   protected void assertMinAccurate(double[] sortedValues, double actualMinValue) {
     assertEquals(sortedValues[0], actualMinValue);
   }
@@ -142,5 +134,20 @@ public class WithExactSummaryStatisticsTest
     final DoubleSummaryStatistics summaryStatistics = new DoubleSummaryStatistics();
     Arrays.stream(values).forEach(summaryStatistics);
     return summaryStatistics;
+  }
+
+  static class DummySketchWithExactSummaryStatistics
+      extends WithExactSummaryStatisticsTest<DummySketch, WithExactSummaryStatistics<DummySketch>> {
+
+    @Override
+    protected WithExactSummaryStatistics<DummySketch> newSketch() {
+      return new WithExactSummaryStatistics<>(DummySketch::new);
+    }
+
+    @Override
+    protected void assertQuantileAccurate(
+        boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
+      // Nothing to assert
+    }
   }
 }
