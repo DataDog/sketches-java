@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -38,9 +39,13 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
 
   protected abstract void assertMaxAccurate(double[] sortedValues, double actualMaxValue);
 
-  protected abstract void assertSumAccurate(double[] sortedValues, double actualSumValue);
+  protected abstract void assertSumAccurate(double[] values, double actualSumValue);
 
-  protected abstract void assertAverageAccurate(double[] sortedValues, double actualAverageValue);
+  protected abstract void assertAverageAccurate(double[] values, double actualAverageValue);
+
+  protected void assertCountAccurate(double[] values, double actualCountValue) {
+    assertThat(actualCountValue).isCloseTo(values.length, DOUBLE_OFFSET);
+  }
 
   @Test
   protected void throwsExceptionWhenExpected() {
@@ -105,7 +110,7 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   }
 
   protected final void assertEncodes(boolean merged, double[] values, QS sketch) {
-    assertThat(sketch.getCount()).isCloseTo(values.length, DOUBLE_OFFSET);
+    assertCountAccurate(values, sketch.getCount());
     if (values.length == 0) {
       assertTrue(sketch.isEmpty());
     } else {
@@ -146,9 +151,11 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
     }
     {
       final QS sketch = newSketch();
+      // Use LinkedHashMap to maintain order.
       Arrays.stream(values)
           .boxed()
-          .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+          .collect(
+              Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
           .forEach(sketch::accept);
       test(false, values, sketch);
     }
@@ -198,6 +205,26 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   }
 
   @Test
+  void testNegativeConstants() {
+    testAdding(0);
+    testAdding(-1);
+    testAdding(-1, -1, -1);
+    testAdding(-10, -10, -10);
+    testAdding(IntStream.range(0, 10000).mapToDouble(i -> -2).toArray());
+    testAdding(-10, -10, -11, -11, -11);
+  }
+
+  @Test
+  void testNegativeAndPositiveConstants() {
+    testAdding(0);
+    testAdding(-1, 1);
+    testAdding(-1, -1, -1, 1, 1, 1);
+    testAdding(-10, -10, -10, 10, 10, 10);
+    testAdding(IntStream.range(0, 20000).mapToDouble(i -> i % 2 == 0 ? 2 : -2).toArray());
+    testAdding(-10, -10, -11, -11, -11, 10, 10, 11, 11, 11);
+  }
+
+  @Test
   void testSingleValue() {
 
     testAdding(0);
@@ -221,12 +248,30 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
                 IntStream.range(0, 100).mapToDouble(i -> i),
                 IntStream.range(0, 10).mapToDouble(i -> 0))
             .toArray());
+
+    testAdding(
+        DoubleStream.concat(
+                IntStream.range(0, 10).mapToDouble(i -> 0),
+                IntStream.range(-100, 100).mapToDouble(i -> i))
+            .toArray());
+
+    testAdding(
+        DoubleStream.concat(
+                IntStream.range(-100, 100).mapToDouble(i -> i),
+                IntStream.range(0, 10).mapToDouble(i -> 0))
+            .toArray());
   }
 
   @Test
   void testWithoutZeros() {
 
     testAdding(IntStream.range(1, 100).mapToDouble(i -> i).toArray());
+
+    testAdding(
+        DoubleStream.concat(
+                IntStream.range(-100, -1).mapToDouble(i -> i),
+                IntStream.range(1, 100).mapToDouble(i -> i))
+            .toArray());
   }
 
   @Test
@@ -240,6 +285,26 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   }
 
   @Test
+  void testNegativeNumbersIncreasingLinearly() {
+    testAdding(IntStream.range(-10000, 0).mapToDouble(v -> v).toArray());
+  }
+
+  @Test
+  void testNegativeAndPositiveNumbersIncreasingLinearly() {
+    testAdding(IntStream.range(-10000, 10000).mapToDouble(v -> v).toArray());
+  }
+
+  @Test
+  void testNegativeNumbersDecreasingLinearly() {
+    testAdding(IntStream.range(0, 10000).mapToDouble(v -> -v).toArray());
+  }
+
+  @Test
+  void testNegativeAndPositiveNumbersDecreasingLinearly() {
+    testAdding(IntStream.range(0, 20000).mapToDouble(v -> 10000 - v).toArray());
+  }
+
+  @Test
   void testIncreasingExponentially() {
     testAdding(IntStream.range(0, 100).mapToDouble(Math::exp).toArray());
   }
@@ -247,6 +312,34 @@ public abstract class QuantileSketchTest<QS extends QuantileSketch<QS>> {
   @Test
   void testDecreasingExponentially() {
     testAdding(IntStream.range(0, 100).mapToDouble(i -> Math.exp(-i)).toArray());
+  }
+
+  @Test
+  void testNegativeNumbersIncreasingExponentially() {
+    testAdding(IntStream.range(0, 100).mapToDouble(i -> -Math.exp(i)).toArray());
+  }
+
+  @Test
+  void testNegativeAndPositiveNumbersIncreasingExponentially() {
+    testAdding(
+        DoubleStream.concat(
+                IntStream.range(0, 100).mapToDouble(i -> -Math.exp(i)),
+                IntStream.range(0, 100).mapToDouble(Math::exp))
+            .toArray());
+  }
+
+  @Test
+  void testNegativeNumbersDecreasingExponentially() {
+    testAdding(IntStream.range(0, 100).mapToDouble(i -> -Math.exp(-i)).toArray());
+  }
+
+  @Test
+  void testNegativeAndPositiveNumbersDecreasingExponentially() {
+    testAdding(
+        DoubleStream.concat(
+                IntStream.range(0, 100).mapToDouble(i -> -Math.exp(-i)),
+                IntStream.range(0, 100).mapToDouble(i -> Math.exp(-i)))
+            .toArray());
   }
 
   @Test

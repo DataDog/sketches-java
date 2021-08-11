@@ -38,7 +38,7 @@ public class WithExactSummaryStatistics<QS extends QuantileSketch<QS>>
     this.max = Double.NEGATIVE_INFINITY;
   }
 
-  private WithExactSummaryStatistics(
+  protected WithExactSummaryStatistics(
       QS sketch,
       double count,
       double sum,
@@ -55,35 +55,54 @@ public class WithExactSummaryStatistics<QS extends QuantileSketch<QS>>
     this.max = max;
   }
 
+  protected final QS sketch() {
+    return sketch;
+  }
+
   @Override
   public void accept(double value) {
     sketch.accept(value);
-    count++;
-    simpleSum += value;
-    sumWithCompensation(value);
-    min = Math.min(min, value);
-    max = Math.max(max, value);
+    addToCount(1);
+    addToSum(value);
+    updateMin(value);
+    updateMax(value);
   }
 
   @Override
   public void accept(double value, double count) {
     sketch.accept(value, count);
-    this.count += count;
-    simpleSum += value * count;
-    sumWithCompensation(value * count);
-    min = Math.min(min, value);
-    max = Math.max(max, value);
+    addToCount(count);
+    addToSum(value * count);
+    updateMin(value);
+    updateMax(value);
   }
 
   @Override
   public void mergeWith(WithExactSummaryStatistics<QS> other) {
     sketch.mergeWith(other.sketch);
-    count += other.count;
+    addToCount(other.count);
     simpleSum += other.simpleSum;
     sumWithCompensation(other.sum);
     sumWithCompensation(other.sumCompensation);
     min = Math.min(min, other.min);
     max = Math.max(max, other.max);
+  }
+
+  protected final void addToCount(double addend) {
+    count += addend;
+  }
+
+  protected final void addToSum(double addend) {
+    simpleSum += addend;
+    sumWithCompensation(addend);
+  }
+
+  protected final void updateMin(double value) {
+    min = Math.min(min, value);
+  }
+
+  protected final void updateMax(double value) {
+    max = Math.max(max, value);
   }
 
   private void sumWithCompensation(double value) {
@@ -141,6 +160,26 @@ public class WithExactSummaryStatistics<QS extends QuantileSketch<QS>>
     if (count == 0) {
       throw new NoSuchElementException();
     }
+    return max;
+  }
+
+  protected final double sum() {
+    return sum;
+  }
+
+  protected final double sumCompensation() {
+    return sumCompensation;
+  }
+
+  protected final double simpleSum() {
+    return simpleSum;
+  }
+
+  protected final double min() {
+    return min;
+  }
+
+  protected final double max() {
     return max;
   }
 

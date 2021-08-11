@@ -12,9 +12,12 @@ import java.util.DoubleSummaryStatistics;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Assertions;
 
-public class WithExactSummaryStatisticsTest
-    extends QuantileSketchTest<
-        WithExactSummaryStatistics<WithExactSummaryStatisticsTest.DummySketch>> {
+public abstract class WithExactSummaryStatisticsTest<
+        QS extends QuantileSketch<QS>, W extends WithExactSummaryStatistics<QS>>
+    extends QuantileSketchTest<WithExactSummaryStatistics<QS>> {
+
+  @Override
+  protected abstract W newSketch();
 
   static class DummySketch implements QuantileSketch<DummySketch> {
 
@@ -108,17 +111,6 @@ public class WithExactSummaryStatisticsTest
   }
 
   @Override
-  protected WithExactSummaryStatistics<DummySketch> newSketch() {
-    return new WithExactSummaryStatistics<>(DummySketch::new);
-  }
-
-  @Override
-  protected void assertQuantileAccurate(
-      boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
-    // Nothing to assert
-  }
-
-  @Override
   protected void assertMinAccurate(double[] sortedValues, double actualMinValue) {
     assertEquals(sortedValues[0], actualMinValue);
   }
@@ -129,16 +121,33 @@ public class WithExactSummaryStatisticsTest
   }
 
   @Override
-  protected void assertSumAccurate(double[] sortedValues, double actualSumValue) {
-    final DoubleSummaryStatistics summaryStatistics = new DoubleSummaryStatistics();
-    Arrays.stream(sortedValues).forEach(summaryStatistics);
-    assertEquals(summaryStatistics.getSum(), actualSumValue);
+  protected void assertSumAccurate(double[] values, double actualSumValue) {
+    assertEquals(summaryStatistics(values).getSum(), actualSumValue);
   }
 
   @Override
-  protected void assertAverageAccurate(double[] sortedValues, double actualAverageValue) {
+  protected void assertAverageAccurate(double[] values, double actualAverageValue) {
+    assertEquals(summaryStatistics(values).getAverage(), actualAverageValue);
+  }
+
+  private static DoubleSummaryStatistics summaryStatistics(double[] values) {
     final DoubleSummaryStatistics summaryStatistics = new DoubleSummaryStatistics();
-    Arrays.stream(sortedValues).forEach(summaryStatistics);
-    assertEquals(summaryStatistics.getAverage(), actualAverageValue);
+    Arrays.stream(values).forEach(summaryStatistics);
+    return summaryStatistics;
+  }
+
+  static class DummySketchWithExactSummaryStatistics
+      extends WithExactSummaryStatisticsTest<DummySketch, WithExactSummaryStatistics<DummySketch>> {
+
+    @Override
+    protected WithExactSummaryStatistics<DummySketch> newSketch() {
+      return new WithExactSummaryStatistics<>(DummySketch::new);
+    }
+
+    @Override
+    protected void assertQuantileAccurate(
+        boolean merged, double[] sortedValues, double quantile, double actualQuantileValue) {
+      // Nothing to assert
+    }
   }
 }

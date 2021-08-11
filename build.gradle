@@ -104,6 +104,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 
 test {
     useJUnitPlatform()
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
 spotless {

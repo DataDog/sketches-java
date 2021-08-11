@@ -402,9 +402,13 @@ public class DDSketch implements QuantileSketch<DDSketch> {
   }
 
   public void decodeAndMergeWith(Input input) throws IOException {
+    decodeAndMergeWith(input, DDSketch::ignoreExactSummaryStatisticFlags);
+  }
+
+  void decodeAndMergeWith(Input input, Decoder fallback) throws IOException {
     final DecodingState state =
         new DecodingState(indexMapping, negativeValueStore, positiveValueStore, zeroCount);
-    decodeAndMergeWith(state, input);
+    decodeAndMergeWith(state, input, fallback);
     zeroCount = state.zeroCount;
   }
 
@@ -414,9 +418,15 @@ public class DDSketch implements QuantileSketch<DDSketch> {
 
   public static DDSketch decode(
       Input input, Supplier<Store> storeSupplier, IndexMapping indexMapping) throws IOException {
+    return decode(input, storeSupplier, indexMapping, DDSketch::ignoreExactSummaryStatisticFlags);
+  }
+
+  public static DDSketch decode(
+      Input input, Supplier<Store> storeSupplier, IndexMapping indexMapping, Decoder fallback)
+      throws IOException {
     final DecodingState state =
         new DecodingState(indexMapping, storeSupplier.get(), storeSupplier.get(), 0);
-    decodeAndMergeWith(state, input);
+    decodeAndMergeWith(state, input, fallback);
     if (state.indexMapping == null) {
       throw new IllegalArgumentException("The index mapping is missing.");
     }
@@ -424,7 +434,8 @@ public class DDSketch implements QuantileSketch<DDSketch> {
         state.indexMapping, state.negativeValueStore, state.positiveValueStore, state.zeroCount);
   }
 
-  private static void decodeAndMergeWith(DecodingState state, Input input) throws IOException {
+  private static void decodeAndMergeWith(DecodingState state, Input input, Decoder fallback)
+      throws IOException {
     while (input.hasRemaining()) {
       final Flag flag = Flag.decode(input);
       switch (flag.type()) {
@@ -447,13 +458,31 @@ public class DDSketch implements QuantileSketch<DDSketch> {
           if (Flag.ZERO_COUNT.equals(flag)) {
             state.zeroCount += VarEncodingHelper.decodeVarDouble(input);
           } else {
-            throw new MalformedInputException("The flag is invalid.");
+            fallback.decode(input, flag);
           }
           break;
         default:
           throw new MalformedInputException("The flag type is invalid.");
       }
     }
+  }
+
+  static void ignoreExactSummaryStatisticFlags(Input input, Flag flag) throws IOException {
+    if (Flag.COUNT.equals(flag)) {
+      VarEncodingHelper.decodeVarDouble(input);
+    } else if (Flag.SUM.equals(flag) || Flag.MIN.equals(flag) || Flag.MAX.equals(flag)) {
+      input.readDoubleLE();
+    } else {
+      DDSketch.throwInvalidFlagException(input, flag);
+    }
+  }
+
+  static void throwInvalidFlagException(Input input, Flag flag) throws IOException {
+    throw new MalformedInputException("The flag is invalid.");
+  }
+
+  interface Decoder {
+    void decode(Input input, Flag flag) throws IOException;
   }
 
   private static final class DecodingState {
