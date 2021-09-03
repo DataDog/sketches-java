@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -166,6 +167,33 @@ public class DDSketch implements QuantileSketch<DDSketch> {
     this.negativeValueStore = sketch.negativeValueStore.copy();
     this.positiveValueStore = sketch.positiveValueStore.copy();
     this.zeroCount = sketch.zeroCount;
+  }
+
+  /**
+   * Constructs an instance of {@code DDSketch} from a mapping, possibly non-empty stores and a
+   * non-negative count for the zero bucket.
+   *
+   * @param indexMapping the index mapping
+   * @param negativeValueStore the store for negative values, possibly non-empty
+   * @param positiveValueStore the store for positive values, possibly non-empty
+   * @param zeroCount the count for the zero bucket, which should be non-negative (and non-NaN)
+   * @return a new instance of {@code DDSketch}
+   * @throws IllegalArgumentException if the {@code zeroCount} is negative or NaN
+   * @throws NullPointerException if one of the arguments is null
+   */
+  public static DDSketch of(
+      IndexMapping indexMapping,
+      Store negativeValueStore,
+      Store positiveValueStore,
+      double zeroCount) {
+    if (!(zeroCount >= 0)) {
+      throw new IllegalArgumentException("The count cannot be negative.");
+    }
+    return new DDSketch(
+        Objects.requireNonNull(indexMapping),
+        Objects.requireNonNull(negativeValueStore),
+        Objects.requireNonNull(positiveValueStore),
+        zeroCount);
   }
 
   public IndexMapping getIndexMapping() {
