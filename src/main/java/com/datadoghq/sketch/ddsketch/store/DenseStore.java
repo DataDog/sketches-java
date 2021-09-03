@@ -333,12 +333,61 @@ public abstract class DenseStore implements Store {
     if (isEmpty()) {
       return;
     }
+
+    long denseEncodingSize = 0;
+    final long numBins = (long) maxIndex - (long) minIndex + 1;
+    denseEncodingSize += VarEncodingHelper.unsignedVarLongEncodedLength(numBins);
+    denseEncodingSize += VarEncodingHelper.signedVarLongEncodedLength(minIndex);
+    denseEncodingSize += VarEncodingHelper.signedVarLongEncodedLength(1);
+
+    long sparseEncodingSize = 0;
+    long numNonEmptyBins = 0;
+
+    long previousIndex = 0;
+    for (int i = minIndex - offset; i <= maxIndex - offset; i++) {
+      final double count = counts[i];
+      final long countVarDoubleEncodedLength = VarEncodingHelper.varDoubleEncodedLength(count);
+      denseEncodingSize += countVarDoubleEncodedLength;
+      if (count != 0) {
+        numNonEmptyBins++;
+        final long index = offset + i;
+        sparseEncodingSize += VarEncodingHelper.signedVarLongEncodedLength(index - previousIndex);
+        sparseEncodingSize += countVarDoubleEncodedLength;
+        previousIndex = index;
+      }
+    }
+
+    if (denseEncodingSize <= sparseEncodingSize) {
+      encodeDensely(output, storeFlagType, numBins);
+    } else {
+      encodeSparsely(output, storeFlagType, numNonEmptyBins);
+    }
+  }
+
+  private void encodeDensely(Output output, Flag.Type storeFlagType, long numBins)
+      throws IOException {
     BinEncodingMode.CONTIGUOUS_COUNTS.toFlag(storeFlagType).encode(output);
-    VarEncodingHelper.encodeUnsignedVarLong(output, (long) maxIndex - (long) minIndex + 1);
+    VarEncodingHelper.encodeUnsignedVarLong(output, numBins);
     VarEncodingHelper.encodeSignedVarLong(output, minIndex);
     VarEncodingHelper.encodeSignedVarLong(output, 1);
     for (int i = minIndex - offset; i <= maxIndex - offset; i++) {
       VarEncodingHelper.encodeVarDouble(output, counts[i]);
+    }
+  }
+
+  private void encodeSparsely(Output output, Flag.Type storeFlagType, long numNonEmptyBins)
+      throws IOException {
+    BinEncodingMode.INDEX_DELTAS_AND_COUNTS.toFlag(storeFlagType).encode(output);
+    VarEncodingHelper.encodeUnsignedVarLong(output, numNonEmptyBins);
+    long previousIndex = 0;
+    for (int i = minIndex - offset; i <= maxIndex - offset; i++) {
+      final double count = counts[i];
+      if (count != 0) {
+        final long index = offset + i;
+        VarEncodingHelper.encodeSignedVarLong(output, index - previousIndex);
+        VarEncodingHelper.encodeVarDouble(output, count);
+        previousIndex = index;
+      }
     }
   }
 

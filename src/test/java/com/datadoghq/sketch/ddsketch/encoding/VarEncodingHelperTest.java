@@ -44,6 +44,12 @@ class VarEncodingHelperTest {
     assertThat(decoded).isEqualTo(value);
   }
 
+  @ParameterizedTest
+  @MethodSource("unsignedVarLongs")
+  void testUnsignedVarLongEncodedLength(long value, byte[] bytes) {
+    assertThat((int) VarEncodingHelper.unsignedVarLongEncodedLength(value)).isEqualTo(bytes.length);
+  }
+
   static Stream<Arguments> unsignedVarLongs() {
     return Stream.of(
         arguments(0L, new byte[] {0x00}),
@@ -109,6 +115,12 @@ class VarEncodingHelperTest {
       return;
     }
     assertThat(decoded).isEqualTo(value);
+  }
+
+  @ParameterizedTest
+  @MethodSource("signedVarLongs")
+  void testSignedVarLongEncodedLength(long value, byte[] bytes) {
+    assertThat((int) VarEncodingHelper.signedVarLongEncodedLength(value)).isEqualTo(bytes.length);
   }
 
   static Stream<Arguments> signedVarLongs() {
@@ -289,6 +301,12 @@ class VarEncodingHelperTest {
       return;
     }
     assertThat(decoded).isEqualTo(value);
+  }
+
+  @ParameterizedTest
+  @MethodSource("varDoubles")
+  void testVarDoubleEncodedLength(double value, byte[] bytes) {
+    assertThat((int) VarEncodingHelper.varDoubleEncodedLength(value)).isEqualTo(bytes.length);
   }
 
   static Stream<Arguments> varDoubles() {
