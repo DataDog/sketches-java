@@ -16,6 +16,12 @@ public final class VarEncodingHelper {
   private static final byte[] VAR_DOUBLE_LENGTHS = new byte[65];
 
   static {
+    // unsignedVarLongEncodedLength, signedVarLongEncodedLength and varDoubleEncodedLength can
+    // compute their outputs from the number of leading or trailing zeros in the binary
+    // representations of their inputs (possibly after a few bitwise operations).
+    // Those encoded lengths are precomputed once for all for any possible number of leading or
+    // trailing zeros, and are stored in UNSIGNED_VAR_LONG_LENGTHS and VAR_DOUBLE_LENGTHS.
+
     final GrowingByteArrayOutput output =
         GrowingByteArrayOutput.withInitialCapacity(MAX_VAR_LEN_64);
 
