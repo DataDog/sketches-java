@@ -13,12 +13,18 @@ import com.datadoghq.sketch.ddsketch.encoding.VarEncodingHelper;
 import com.datadoghq.sketch.ddsketch.mapping.IndexMapping;
 import com.datadoghq.sketch.ddsketch.store.Store;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class DDSketchWithExactSummaryStatistics extends WithExactSummaryStatistics<DDSketch> {
 
   public DDSketchWithExactSummaryStatistics(Supplier<DDSketch> ddSketchConstructor) {
     super(ddSketchConstructor);
+  }
+
+  public DDSketchWithExactSummaryStatistics(
+      IndexMapping indexMapping, Supplier<Store> storeSupplier) {
+    this(() -> new DDSketch(indexMapping, storeSupplier));
   }
 
   private DDSketchWithExactSummaryStatistics(
@@ -30,6 +36,48 @@ public class DDSketchWithExactSummaryStatistics extends WithExactSummaryStatisti
       double min,
       double max) {
     super(sketch, count, sum, sumCompensation, simpleSum, min, max);
+  }
+
+  /**
+   * Constructs an instance of {@code DDSketchWithExactSummaryStatistics} from a {@link DDSketch}
+   * and exact summary statistics.
+   *
+   * @param sketch the instance of {@link DDSketch}
+   * @param count the exact count
+   * @param min the exact minimum value
+   * @param max the exact maximum value
+   * @param sum the exact sum
+   * @return a new instance of {@code DDSketchWithExactSummaryStatistics}
+   * @throws IllegalArgumentException if provided exact summary statistics are known to be
+   *     inconsistent
+   * @throws NullPointerException if the provided {@code sketch} is null
+   */
+  public static DDSketchWithExactSummaryStatistics of(
+      DDSketch sketch, double count, double min, double max, double sum) {
+    if (!(count >= 0)) {
+      throw new IllegalArgumentException("The count cannot be negative.");
+    }
+    if (count > 0 && min > max) {
+      throw new IllegalArgumentException("The minimum cannot be greater than the maximum.");
+    }
+    if (count == 0 && (min != Double.MAX_VALUE || max != Double.MIN_VALUE)) {
+      throw new IllegalArgumentException(
+          "The minimum and maximum of an empty sketch should respectively be MAX_VALUE and MIN_VALUE.");
+    }
+    return new DDSketchWithExactSummaryStatistics(
+        Objects.requireNonNull(sketch), count, sum, 0, sum, min, max);
+  }
+
+  public IndexMapping getIndexMapping() {
+    return sketch().getIndexMapping();
+  }
+
+  public Store getNegativeValueStore() {
+    return sketch().getNegativeValueStore();
+  }
+
+  public Store getPositiveValueStore() {
+    return sketch().getPositiveValueStore();
   }
 
   @Override
