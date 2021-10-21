@@ -60,7 +60,7 @@ public class DDSketchWithExactSummaryStatistics extends WithExactSummaryStatisti
     if (count > 0 && min > max) {
       throw new IllegalArgumentException("The minimum cannot be greater than the maximum.");
     }
-    if (count == 0 && (min != Double.MAX_VALUE || max != Double.MIN_VALUE)) {
+    if (count == 0 && (min != Double.POSITIVE_INFINITY || max != Double.NEGATIVE_INFINITY)) {
       throw new IllegalArgumentException(
           "The minimum and maximum of an empty sketch should respectively be MAX_VALUE and MIN_VALUE.");
     }

@@ -7,6 +7,7 @@ package com.datadoghq.sketch.ddsketch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.datadoghq.sketch.WithExactSummaryStatistics;
@@ -173,6 +174,28 @@ public abstract class DDSketchWithExactSummaryStatisticsTest
     final Input input = ByteArrayInput.wrap(output.backingArray(), 0, output.numWrittenBytes());
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> DDSketchWithExactSummaryStatistics.decode(input, storeSupplier()));
+  }
+
+  @Test
+  void testBuildFromData() {
+    final DDSketch emptySketch =
+        new DDSketch(new LogarithmicMapping(1e-2), UnboundedSizeDenseStore::new);
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> DDSketchWithExactSummaryStatistics.of(emptySketch, -1, 0, 0, 0));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> DDSketchWithExactSummaryStatistics.of(emptySketch, 0, 0, 0, 0));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(
+            () ->
+                DDSketchWithExactSummaryStatistics.of(
+                    emptySketch, 0, Double.MAX_VALUE, Double.MIN_VALUE, 0));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> DDSketchWithExactSummaryStatistics.of(emptySketch, 1, 1, 0, 0));
+    assertThatNoException()
+        .isThrownBy(
+            () ->
+                DDSketchWithExactSummaryStatistics.of(
+                    emptySketch, 0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 0));
   }
 
   static class DDSketchTestWithExactSummaryStatistics1
