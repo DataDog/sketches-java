@@ -62,7 +62,7 @@ public class DDSketchWithExactSummaryStatistics extends WithExactSummaryStatisti
     }
     if (count == 0 && (min != Double.POSITIVE_INFINITY || max != Double.NEGATIVE_INFINITY)) {
       throw new IllegalArgumentException(
-          "The minimum and maximum of an empty sketch should respectively be MAX_VALUE and MIN_VALUE.");
+          "The minimum and maximum of an empty sketch should respectively be POSITIVE_INFINITY and NEGATIVE_INFINITY.");
     }
     return new DDSketchWithExactSummaryStatistics(
         Objects.requireNonNull(sketch), count, sum, 0, sum, min, max);
