@@ -42,7 +42,12 @@ abstract class LogLikeIndexMapping implements IndexMapping {
     this.gamma = requireValidGamma(gamma);
     this.indexOffset = indexOffset;
     this.multiplier = Math.log(base()) / Math.log1p(gamma - 1);
-    this.relativeAccuracy = 1 - 2 / (1 + Math.exp(correctingFactor() * Math.log1p(gamma - 1)));
+    this.relativeAccuracy = relativeAccuracy(gamma, correctingFactor());
+  }
+
+  private static double relativeAccuracy(double gamma, double correctingFactor) {
+    double correctedGamma = Math.pow(gamma, correctingFactor);
+    return (correctedGamma - 1) / (correctedGamma + 1);
   }
 
   static double gamma(double relativeAccuracy, double correctingFactor) {
