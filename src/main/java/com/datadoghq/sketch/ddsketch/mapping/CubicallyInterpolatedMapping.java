@@ -73,6 +73,8 @@ import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
  */
 public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
 
+  private static final double CORRECTING_FACTOR = 7 / (10 * Math.log(2));
+
   // Assuming we write the index as index(v) = floor(multiplier*ln(2)/ln(gamma)*(e+As^3+Bs^2+Cs)),
   // where v=2^e(1+s) and gamma = (1+relativeAccuracy)/(1-relativeAccuracy), those are the
   // coefficients that minimize the multiplier, therefore the memory footprint of the sketch, while
@@ -82,7 +84,7 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
   private static final double C = 10.0 / 7.0;
 
   public CubicallyInterpolatedMapping(double relativeAccuracy) {
-    super(relativeAccuracy);
+    super(gamma(requireValidRelativeAccuracy(relativeAccuracy), CORRECTING_FACTOR), 0);
   }
 
   /** {@inheritDoc} */
@@ -116,7 +118,7 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
 
   @Override
   double correctingFactor() {
-    return 7 / (10 * Math.log(2));
+    return CORRECTING_FACTOR;
   }
 
   @Override

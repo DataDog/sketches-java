@@ -5,6 +5,10 @@
 
 package com.datadoghq.sketch.ddsketch.mapping;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+
 class LinearlyInterpolatedMappingTest extends LogLikeIndexMappingTest {
 
   @Override
@@ -15,5 +19,13 @@ class LinearlyInterpolatedMappingTest extends LogLikeIndexMappingTest {
   @Override
   LinearlyInterpolatedMapping getMapping(double gamma, double indexOffset) {
     return new LinearlyInterpolatedMapping(gamma, indexOffset);
+  }
+
+  @Test
+  void testIndexOffset() {
+    // This is inconsistent with other mappings but this has to be maintained to ensure backward
+    // compatibility. Other mappings, when constructed from the relative accuracy, map 1 to 0.
+    assertThat(new LinearlyInterpolatedMapping(1e-1).index(1)).isEqualTo(4);
+    assertThat(new LinearlyInterpolatedMapping(1e-2).index(1)).isEqualTo(49);
   }
 }

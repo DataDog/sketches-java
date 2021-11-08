@@ -17,6 +17,7 @@ import com.datadoghq.sketch.ddsketch.encoding.Input;
 import com.datadoghq.sketch.util.accuracy.AccuracyTester;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 abstract class LogLikeIndexMappingTest extends IndexMappingTest {
@@ -71,7 +72,11 @@ abstract class LogLikeIndexMappingTest extends IndexMappingTest {
   @Test
   @Override
   void testEncodeDecode() {
-    final LogLikeIndexMapping mapping = getMapping(1.02, 3);
+    Stream.of(getMapping(1.02, 3), getMapping(0.01))
+        .forEach(LogLikeIndexMappingTest::testEncodeDecode);
+  }
+
+  private static void testEncodeDecode(LogLikeIndexMapping mapping) {
     final GrowingByteArrayOutput output = GrowingByteArrayOutput.withDefaultInitialCapacity();
     try {
       mapping.encode(output);
