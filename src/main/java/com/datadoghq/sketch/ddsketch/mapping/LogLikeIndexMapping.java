@@ -45,13 +45,34 @@ abstract class LogLikeIndexMapping implements IndexMapping {
     this.relativeAccuracy = relativeAccuracy(gamma, correctingFactor());
   }
 
+  /**
+   * Calculates the relative accuracy of the mapping.
+   *
+   * @param gamma the base of the logarithm that the mapping approximates
+   * @param correctingFactor a measure of how well the mapping approximates the logarithm (see
+   *     {@link #correctingFactor()} for details)
+   * @return the relative accuracy of the mapping
+   */
   private static double relativeAccuracy(double gamma, double correctingFactor) {
-    double correctedGamma = Math.pow(gamma, correctingFactor);
-    return (correctedGamma - 1) / (correctedGamma + 1);
+    final double exactLogGamma = Math.pow(gamma, correctingFactor);
+    return (exactLogGamma - 1) / (exactLogGamma + 1);
   }
 
+  /**
+   * Calculates the (minimal) base that needs to be used for the mapping to be relatively accurate
+   * with the provided relative accuracy.
+   *
+   * @param relativeAccuracy the relative accuracy that we want the index mapping to guarantee
+   * @param correctingFactor a measure of how well the mapping approximates the logarithm (see
+   *     {@link #correctingFactor()} for details)
+   * @return the base of the logarithm to use to guarantee the provided relative accuracy
+   */
   static double gamma(double relativeAccuracy, double correctingFactor) {
-    return Math.pow((1 + relativeAccuracy) / (1 - relativeAccuracy), 1 / correctingFactor);
+    // exactLogGamma is the value of the base when using an exactly logarithmic mapping.
+    // When using a mapping that only approximates the logarithm, we need to adjust the base to
+    // correct for the induced loss of relative accuracy.
+    final double exactLogGamma = (1 + relativeAccuracy) / (1 - relativeAccuracy);
+    return Math.pow(exactLogGamma, 1 / correctingFactor);
   }
 
   static double requireValidRelativeAccuracy(double relativeAccuracy) {
