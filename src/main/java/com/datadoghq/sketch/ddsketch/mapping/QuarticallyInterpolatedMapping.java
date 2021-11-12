@@ -17,12 +17,12 @@ import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
  */
 public class QuarticallyInterpolatedMapping extends LogLikeIndexMapping {
 
-  private static final double CORRECTING_FACTOR = 25 / (36 * Math.log(2));
-
   private static final double A = -2.0 / 25.0;
   private static final double B = 8.0 / 25.0;
   private static final double C = -17.0 / 25.0;
   private static final double D = 36.0 / 25.0;
+
+  private static final double CORRECTING_FACTOR = 1 / (D * Math.log(2));
 
   public QuarticallyInterpolatedMapping(double relativeAccuracy) {
     super(gamma(requireValidRelativeAccuracy(relativeAccuracy), CORRECTING_FACTOR), 0);
