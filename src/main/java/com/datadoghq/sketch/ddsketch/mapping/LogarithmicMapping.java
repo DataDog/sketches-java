@@ -17,7 +17,7 @@ import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
 public class LogarithmicMapping extends LogLikeIndexMapping {
 
   public LogarithmicMapping(double relativeAccuracy) {
-    super(relativeAccuracy);
+    super(gamma(requireValidRelativeAccuracy(relativeAccuracy), 1), 0);
   }
 
   /** {@inheritDoc} */

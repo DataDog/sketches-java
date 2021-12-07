@@ -16,8 +16,12 @@ import com.datadoghq.sketch.ddsketch.encoding.IndexMappingLayout;
  */
 public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
 
+  private static final double CORRECTING_FACTOR = 1 / Math.log(2);
+
   public LinearlyInterpolatedMapping(double relativeAccuracy) {
-    super(relativeAccuracy);
+    super(
+        gamma(requireValidRelativeAccuracy(relativeAccuracy), CORRECTING_FACTOR),
+        indexOffsetShift(relativeAccuracy));
   }
 
   /** {@inheritDoc} */
@@ -25,17 +29,27 @@ public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
     super(gamma, indexOffset);
   }
 
+  /**
+   * Contrary to other mappings, {@link
+   * LinearlyInterpolatedMapping#LinearlyInterpolatedMapping(double)} do not map 1 to 0. This method
+   * returns the index offset shift to maintain backward compatibility.
+   */
+  private static double indexOffsetShift(double relativeAccuracy) {
+    return 1 / (Math.log1p(2 * relativeAccuracy / (1 - relativeAccuracy)));
+  }
+
   @Override
   double log(double value) {
     final long longBits = Double.doubleToRawLongBits(value);
     return (double) DoubleBitOperationHelper.getExponent(longBits)
-        + DoubleBitOperationHelper.getSignificandPlusOne(longBits);
+        + DoubleBitOperationHelper.getSignificandPlusOne(longBits)
+        - 1;
   }
 
   @Override
   double logInverse(double index) {
-    final long exponent = (long) Math.floor(index - 1);
-    final double significandPlusOne = index - exponent;
+    final long exponent = (long) Math.floor(index);
+    final double significandPlusOne = index - exponent + 1;
     return DoubleBitOperationHelper.buildDouble(exponent, significandPlusOne);
   }
 
@@ -46,7 +60,7 @@ public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
 
   @Override
   double correctingFactor() {
-    return 1 / Math.log(2);
+    return CORRECTING_FACTOR;
   }
 
   @Override

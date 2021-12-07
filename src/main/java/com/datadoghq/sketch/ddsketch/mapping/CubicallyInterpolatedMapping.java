@@ -81,8 +81,10 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
   private static final double B = -3.0 / 5.0;
   private static final double C = 10.0 / 7.0;
 
+  private static final double CORRECTING_FACTOR = 1 / (C * Math.log(2));
+
   public CubicallyInterpolatedMapping(double relativeAccuracy) {
-    super(relativeAccuracy);
+    super(gamma(requireValidRelativeAccuracy(relativeAccuracy), CORRECTING_FACTOR), 0);
   }
 
   /** {@inheritDoc} */
@@ -116,7 +118,7 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
 
   @Override
   double correctingFactor() {
-    return 7 / (10 * Math.log(2));
+    return CORRECTING_FACTOR;
   }
 
   @Override
