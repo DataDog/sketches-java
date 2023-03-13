@@ -21,7 +21,7 @@ public class LogarithmicMapping extends LogLikeIndexMapping {
   }
 
   /** {@inheritDoc} */
-  LogarithmicMapping(double gamma, double indexOffset) {
+  public LogarithmicMapping(double gamma, double indexOffset) {
     super(gamma, indexOffset);
   }
 

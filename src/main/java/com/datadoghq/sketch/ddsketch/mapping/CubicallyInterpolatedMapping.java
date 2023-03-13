@@ -88,7 +88,7 @@ public class CubicallyInterpolatedMapping extends LogLikeIndexMapping {
   }
 
   /** {@inheritDoc} */
-  CubicallyInterpolatedMapping(double gamma, double indexOffset) {
+  public CubicallyInterpolatedMapping(double gamma, double indexOffset) {
     super(gamma, indexOffset);
   }
 

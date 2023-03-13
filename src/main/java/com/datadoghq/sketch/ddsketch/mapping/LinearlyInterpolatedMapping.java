@@ -25,7 +25,7 @@ public class LinearlyInterpolatedMapping extends LogLikeIndexMapping {
   }
 
   /** {@inheritDoc} */
-  LinearlyInterpolatedMapping(double gamma, double indexOffset) {
+  public LinearlyInterpolatedMapping(double gamma, double indexOffset) {
     super(gamma, indexOffset);
   }
 
