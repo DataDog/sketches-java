@@ -25,7 +25,7 @@ public class QuadraticallyInterpolatedMapping extends LogLikeIndexMapping {
   }
 
   /** {@inheritDoc} */
-  QuadraticallyInterpolatedMapping(double gamma, double indexOffset) {
+  public QuadraticallyInterpolatedMapping(double gamma, double indexOffset) {
     super(gamma, indexOffset);
   }
 

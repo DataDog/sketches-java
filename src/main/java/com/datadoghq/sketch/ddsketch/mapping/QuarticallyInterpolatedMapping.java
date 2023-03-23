@@ -29,7 +29,7 @@ public class QuarticallyInterpolatedMapping extends LogLikeIndexMapping {
   }
 
   /** {@inheritDoc} */
-  QuarticallyInterpolatedMapping(double gamma, double indexOffset) {
+  public QuarticallyInterpolatedMapping(double gamma, double indexOffset) {
     super(gamma, indexOffset);
   }
 

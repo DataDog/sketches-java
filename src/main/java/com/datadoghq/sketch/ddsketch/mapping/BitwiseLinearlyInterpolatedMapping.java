@@ -35,7 +35,7 @@ public class BitwiseLinearlyInterpolatedMapping implements IndexMapping {
     this(getMinNumSignificantBinaryDigits(relativeAccuracy));
   }
 
-  BitwiseLinearlyInterpolatedMapping(int numSignificantBinaryDigits) {
+  public BitwiseLinearlyInterpolatedMapping(int numSignificantBinaryDigits) {
     if (numSignificantBinaryDigits < 0) {
       throw new IllegalArgumentException(
           "The number of significant binary digits cannot be negative.");
