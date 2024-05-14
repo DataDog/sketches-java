@@ -14,7 +14,7 @@ repositories {
 }
 
 group = 'com.datadoghq'
-version = '0.8.2'
+version = '0.8.3'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
