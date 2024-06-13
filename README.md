@@ -1,5 +1,9 @@
 # sketches-java
 
+![GitHub tag checks state](https://img.shields.io/github/checks-status/DataDog/sketches-java/master?style=flat-square)
+[![javadoc](https://javadoc.io/badge2/com.datadoghq/sketches-java/javadoc.svg?style=flat-square)](https://javadoc.io/doc/com.datadoghq/sketches-java)
+[![GitHub](https://img.shields.io/github/license/DataDog/sketches-java?style=flat-square)](https://github.com/DataDog/sketches-java/blob/master/LICENSE)
+
 This repo contains Java implementations of the distributed quantile sketch algorithm `DDSketch` [1]. DDSketch is mergeable, meaning that multiple sketches from distributed systems can be combined in a central node.
 
 # Quick start guide
