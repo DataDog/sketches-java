@@ -96,7 +96,7 @@ public class CollapsingHighestDenseStore extends CollapsingDenseStore {
     if (store instanceof CollapsingHighestDenseStore) {
       mergeWith((CollapsingHighestDenseStore) store);
     } else {
-      getAscendingStream().forEachOrdered(this::add);
+      store.getAscendingStream().forEachOrdered(this::add);
     }
   }
 
