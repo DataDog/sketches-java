@@ -5,11 +5,14 @@
 
 package com.datadoghq.sketch.ddsketch.store;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
 
 abstract class CollapsingHighestDenseStoreTest extends StoreTest {
 
@@ -41,6 +44,18 @@ abstract class CollapsingHighestDenseStoreTest extends StoreTest {
     @Override
     int maxNumBins() {
       return 1;
+    }
+
+    @Test
+    void testMergingDifferentStoreTypes() {
+      {
+        final Store clHist = new CollapsingLowestDenseStore(1);
+        final Store chHist = new CollapsingHighestDenseStore(1);
+        clHist.add(0, 3);
+        chHist.add(0, 5);
+        chHist.mergeWith(clHist);
+        assertEquals(8.0, chHist.getTotalCount());
+      }
     }
   }
 
