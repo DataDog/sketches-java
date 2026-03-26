@@ -7,7 +7,7 @@ variables:
   REGISTRY: 486234852809.dkr.ecr.us-east-1.amazonaws.com
 
 .common: &common
-  tags: ["runner:docker", "size:large"]
+  tags: ["docker-in-docker:amd64"]
 
 .gradle_build: &gradle_build
   <<: *common
