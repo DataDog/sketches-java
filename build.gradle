@@ -14,7 +14,7 @@ repositories {
 }
 
 group = 'com.datadoghq'
-version = '0.8.3'
+version = '1.8.3'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -55,8 +55,8 @@ java {
 }
 
 dependencies {
-    protobufImplementation 'com.google.protobuf:protobuf-java:3.13.0'
-    testImplementation 'com.google.protobuf:protobuf-java:3.13.0'
+    protobufImplementation 'com.google.protobuf:protobuf-java:4.34.1'
+    testImplementation 'com.google.protobuf:protobuf-java:4.34.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
@@ -67,7 +67,7 @@ dependencies {
 protobuf {
     // make it possible to build without protoc installed
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.3.0'
+        artifact = 'com.google.protobuf:protoc:4.34.1'
     }
 }
 
@@ -109,7 +109,7 @@ test {
 
 spotless {
     java {
-        googleJavaFormat()
+        googleJavaFormat('1.17.0')
         licenseHeader '/* Unless explicitly stated otherwise all files in this repository are licensed under the Apache License 2.0.\n' +
             ' * This product includes software developed at Datadog (https://www.datadoghq.com/).\n' +
             ' * Copyright $YEAR Datadog, Inc.\n' +
@@ -177,6 +177,7 @@ nexusPublishing {
 }
 
 signing {
+    required { gradle.taskGraph.hasTask("publishToSonatype") }
     useInMemoryPgpKeys(System.getenv("GPG_PRIVATE_KEY"), System.getenv("GPG_PASSPHRASE"))
     sign publishing.publications.mavenJava
 }
