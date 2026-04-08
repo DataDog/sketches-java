@@ -165,6 +165,17 @@ publishing {
             }
         }
     }
+    repositories {
+        maven {
+            // Configure for your local Nexus instance
+            url = System.getenv("NEXUS_URL") ?: "http://vi-nexus.lab.vi.local:8081/repository/maven-releases/"
+            allowInsecureProtocol = true
+            credentials {
+                username = System.getenv("NEXUS_USERNAME") ?: "admin"
+                password = System.getenv("NEXUS_PASSWORD") ?: "admin123"
+            }
+        }
+    }
 }
 
 nexusPublishing {
