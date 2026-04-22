@@ -6,7 +6,7 @@ plugins {
     id 'com.google.protobuf' version '0.8.13'
     id 'idea'
     id 'me.champeau.jmh' version '0.6.5'
-    id "com.diffplug.spotless" version "5.11.1"
+    id "com.diffplug.spotless" version "8.4.0"
 }
 
 repositories {
