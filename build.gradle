@@ -67,7 +67,7 @@ dependencies {
 protobuf {
     // make it possible to build without protoc installed
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.3.0'
+        artifact = 'com.google.protobuf:protoc:4.36.0'
     }
 }
 
