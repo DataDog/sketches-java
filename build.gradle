@@ -55,8 +55,8 @@ java {
 }
 
 dependencies {
-    protobufImplementation 'com.google.protobuf:protobuf-java:3.25.5'
-    testImplementation 'com.google.protobuf:protobuf-java:3.25.5'
+    protobufImplementation 'com.google.protobuf:protobuf-java:4.36.2'
+    testImplementation 'com.google.protobuf:protobuf-java:4.36.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
